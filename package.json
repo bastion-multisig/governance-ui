@@ -1,7 +1,7 @@
 {
   "name": "@solana/governance-ui",
   "author": "Solana Maintainers <maintainers@solana.foundation>",
-  "license": "MIT",
+  "license": "All rights reserved. Code derived from the Solana Maintainers licensed under MIT",
   "version": "1.0.0",
   "scripts": {
     "dev": "next dev",
@@ -23,6 +23,8 @@
     ]
   },
   "dependencies": {
+    "@bastion-multisig/multisig-tx": "^0.3.5",
+    "@bastion-multisig/solana-wallet": "^2.0.5",
     "@blockworks-foundation/mango-client": "^3.6.7",
     "@blockworks-foundation/voter-stake-registry-client": "^0.2.3",
     "@bundlr-network/client": "^0.7.15",
@@ -40,11 +42,13 @@
     "@headlessui/react": "^1.6.6",
     "@heroicons/react": "^1.0.1",
     "@hookform/resolvers": "^2.8.10",
+    "@json-rpc-tools/utils": "1.7.6",
     "@marinade.finance/marinade-ts-sdk": "^2.0.9",
     "@metaplex-foundation/js": "^0.12.0",
     "@metaplex-foundation/mpl-token-metadata": "~2.0",
     "@mithraic-labs/serum-remote": "^0.0.1-rc.16",
     "@next/bundle-analyzer": "^12.1.5",
+    "@nextui-org/react": "^1.0.8-beta.5",
     "@nfteyez/sol-rayz": "^0.10.2",
     "@nivo/bar": "^0.79.1",
     "@nivo/core": "^0.79.0",
@@ -71,6 +75,9 @@
     "@streamflow/stream": "3.0.10",
     "@switchboard-xyz/switchboard-v2": "^0.0.110",
     "@tippyjs/react": "^4.2.6",
+    "@walletconnect/client": "2.0.0-beta.26",
+    "@walletconnect/types": "2.0.0-beta.26",
+    "@walletconnect/utils": "2.0.0-beta.26",
     "axios": "^0.26.1",
     "bignumber.js": "^9.0.2",
     "buffer-layout": "^1.2.2",
@@ -89,6 +96,7 @@
     "pyth-staking-api": "^1.2.17",
     "rc-slider": "^9.7.5",
     "react": "^18.1.0",
+    "react-code-blocks": "^0.0.9-0",
     "react-dom": "^18.0.0",
     "react-dropzone": "^14.2.2",
     "react-headless-pagination": "^0.1.0",
@@ -102,6 +110,7 @@
     "superstruct": "^0.15.4",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^3.14.1",
+    "valtio": "1.5.2",
     "yup": "^0.32.11",
     "zustand": "^3.7.2"
   },
