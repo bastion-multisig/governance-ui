@@ -4,24 +4,15 @@ import { CLIENT_EVENTS } from '@walletconnect/client'
 import { RequestEvent, SessionTypes } from '@walletconnect/types'
 import { useCallback, useEffect } from 'react'
 import useWallet from '@hooks/useWallet'
-import { NoSmartWalletError, NoWalletError } from 'WalletConnect/utils/error'
+import { NoWalletError } from 'WalletConnect/utils/error'
 import {
   deserialiseTransaction,
   deserializeAllTransactions,
-  serialiseTransaction,
-  serializeAllTransactions,
   SolanaSignAllTransactions,
   SolanaSignTransaction,
 } from '@bastion-multisig/solana-wallet'
-import { translateAddress } from '@project-serum/anchor'
-import { TxInterpreter } from '@bastion-multisig/multisig-tx'
-import { WalletSignTransactionError } from '@solana/wallet-adapter-base'
 import { useWalletConnectContext } from 'WalletConnect/store/WalletConnectContext'
-import {
-  formatJsonRpcError,
-  formatJsonRpcResult,
-  JsonRpcResponse,
-} from '@json-rpc-tools/utils'
+import { formatJsonRpcError, formatJsonRpcResult } from '@json-rpc-tools/utils'
 import { ERROR } from '@walletconnect/utils'
 import { NotYetImplementedError } from '@metaplex-foundation/js'
 
@@ -42,9 +33,10 @@ export default function useWalletConnectEventsManager() {
   /******************************************************************************
    * 2. [Optional] handle session created
    *****************************************************************************/
-  const onSessionCreated = useCallback((created: SessionTypes.Created) => {},
-  [])
-
+  const onSessionCreated = useCallback(
+    (_created: SessionTypes.Created) => {}, // eslint-disable-line
+    []
+  )
   /******************************************************************************
    * 3. Open request handling modal based on method that was used
    *****************************************************************************/
@@ -64,7 +56,7 @@ export default function useWalletConnectEventsManager() {
         case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
         case SOLANA_SIGNING_METHODS.SOLANA_SIGN_ALL_TRANSACTIONS:
           if (AUTO_APPROVE) {
-            await approveSolanaRequest(requestEvent)
+            return await approveSolanaRequest(requestEvent)
           } else {
             return ModalStore.open('SessionSignSolanaModal', {
               requestEvent,
@@ -90,35 +82,35 @@ export default function useWalletConnectEventsManager() {
     switch (method) {
       case SOLANA_SIGNING_METHODS.SOLANA_SIGN_MESSAGE:
         console.log("Program derived addresses can't sign messages.", params)
-        await rejectSolanaRequest(requestEvent)
+        return await rejectSolanaRequest(requestEvent)
 
       case SOLANA_SIGNING_METHODS.SOLANA_SIGN_ALL_TRANSACTIONS:
         try {
           const signedParams = await signAllTransactions(params)
           const response = formatJsonRpcResult(id, signedParams)
-          await walletConnectClient?.respond({
+          return await walletConnectClient?.respond({
             topic: requestEvent.topic,
             response,
           })
         } catch (err: any) {
           console.log(err)
-          await rejectSolanaRequest(requestEvent)
+          return await rejectSolanaRequest(requestEvent)
         }
 
       case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
         try {
           const signedParams = await signTransaction(params)
           const response = formatJsonRpcResult(id, signedParams)
-          await walletConnectClient?.respond({
+          return await walletConnectClient?.respond({
             topic: requestEvent.topic,
             response,
           })
         } catch (err: any) {
           console.log(err)
-          await rejectSolanaRequest(requestEvent)
+          return await rejectSolanaRequest(requestEvent)
         }
       default:
-        await rejectSolanaRequest(requestEvent)
+        return await rejectSolanaRequest(requestEvent)
     }
   }
 
@@ -195,7 +187,7 @@ export default function useWalletConnectEventsManager() {
    * Set up WalletConnect event listeners
    *****************************************************************************/
   useEffect(() => {
-    let client = walletConnectClient
+    const client = walletConnectClient
     if (client) {
       client.on(CLIENT_EVENTS.session.proposal, onSessionProposal)
 

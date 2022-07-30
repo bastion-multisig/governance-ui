@@ -484,7 +484,13 @@ export type createParams = [
 export interface ComponentInstructionData {
   governedAccount?: ProgramAccount<Governance> | undefined
   getInstruction?: () => Promise<UiInstruction>
-  type: any
+  type:
+    | {
+        id: Instructions
+        name: string
+        isVisible: boolean | undefined
+      }
+    | undefined
 }
 export interface InstructionsContext {
   instructionsData: ComponentInstructionData[]

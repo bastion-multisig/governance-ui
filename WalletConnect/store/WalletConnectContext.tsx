@@ -16,8 +16,8 @@ export interface WalletConnectState {
 }
 
 export const WalletConnectContext = createContext<WalletConnectState>({
-  approveSolanaRequest: async () => {},
-  rejectSolanaRequest: async () => {},
+  approveSolanaRequest: async () => {}, // eslint-disable-line
+  rejectSolanaRequest: async () => {}, // eslint-disable-line
 })
 
 export const WalletConnectProvider = ({
