@@ -5,11 +5,14 @@ import RequestModalContainer from '../components/RequestModalContainer'
 import ModalStore from '../store/ModalStore'
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { useWalletConnectContext } from 'WalletConnect/store/WalletConnectContext'
-import { NotYetImplementedError } from '@metaplex-foundation/js'
-import { Keypair } from '@solana/web3.js'
+import { PublicKey } from '@solana/web3.js'
 
-export default function SessionProposalModal() {
-  const { walletConnectClient } = useWalletConnectContext()
+export default function SessionProposalModal({
+  accounts,
+}: {
+  accounts: PublicKey[]
+}) {
+  const { approveSession, rejectSession } = useWalletConnectContext()
 
   // Get proposal data and wallet address from store
   const proposal = ModalStore.state.data?.proposal
@@ -24,36 +27,18 @@ export default function SessionProposalModal() {
   const { chains } = permissions.blockchain
   const { methods } = permissions.jsonrpc
 
-  // FIXME!! Treasury PK
-  const treasuryPk = Keypair.generate().publicKey.toBase58()
-
   // Handle approve action
   async function onApprove() {
-    throw new NotYetImplementedError()
-    // if (proposal && treasuryPk) {
-    //   // This connects to any cluster that the frontend requests
-    //   // Chain consts are available in src/data/SolanaData.ts
-
-    //   // FIXME! This may cause a problem when connecting to a
-    //   // cluster where the smart wallet does not exist.
-    //   // Check if the smart wallet exists on the chain before continuing
-    //   const accounts = chains.map(
-    //     (chain) => `${chain}:${treasuryPk.toBase58()}`
-    //   )
-    //   const response = {
-    //     state: {
-    //       accounts,
-    //     },
-    //   }
-    //   await walletConnectClient?.approve({ proposal, response })
-    // }
+    if (proposal && accounts.length > 0) {
+      approveSession(proposal, accounts)
+    }
     ModalStore.close()
   }
 
   // Hanlde reject action
   async function onReject() {
     if (proposal) {
-      await walletConnectClient?.reject({ proposal })
+      rejectSession(proposal)
     }
     ModalStore.close()
   }
@@ -74,10 +59,10 @@ export default function SessionProposalModal() {
 
       <Modal.Footer>
         <Button auto flat color="error" onClick={onReject}>
-          {treasuryPk ? 'Reject' : 'Smart Wallet not connected'}
+          {accounts.length > 0 ? 'Reject' : 'Governance not selected'}
         </Button>
 
-        {treasuryPk && (
+        {accounts.length > 0 && (
           <Button auto flat color="success" onClick={onApprove}>
             Approve
           </Button>

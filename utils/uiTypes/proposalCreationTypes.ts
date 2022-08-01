@@ -2,7 +2,12 @@ import { Governance, InstructionData } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
 import { RpcContext } from '@solana/spl-governance'
 import { MintInfo } from '@solana/spl-token'
-import { PublicKey, Keypair, TransactionInstruction } from '@solana/web3.js'
+import {
+  PublicKey,
+  Keypair,
+  TransactionInstruction,
+  Transaction,
+} from '@solana/web3.js'
 import { getNameOf } from '@tools/core/script'
 import { SupportedMintName } from '@tools/sdk/solend/configuration'
 import { SplTokenUIName } from '@utils/splTokens'
@@ -10,6 +15,7 @@ import { DepositWithMintAccount, Voter } from 'VoteStakeRegistry/sdk/accounts'
 import { LockupKind } from 'VoteStakeRegistry/tools/types'
 import { consts as foresightConsts } from '@foresight-tmp/foresight-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
+import { SessionTypes } from '@walletconnect/types'
 
 export interface UiInstruction {
   serializedTransactions?: string[][]
@@ -400,6 +406,12 @@ export interface UpdateTokenMetadataForm {
   programId: string | undefined
 }
 
+export interface BastionTransactionForm {
+  governedAccount?: AssetAccount
+  transactions?: Transaction[]
+  requestSession?: SessionTypes.Settled
+}
+
 export enum Instructions {
   Transfer,
   ProgramUpgrade,
@@ -461,6 +473,7 @@ export enum Instructions {
   SagaPreOrder,
   DepositToMangoAccount,
   DepositToMangoAccountCsv,
+  Bastion,
 }
 
 export type createParams = [

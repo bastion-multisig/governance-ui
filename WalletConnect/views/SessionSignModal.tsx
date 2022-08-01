@@ -7,11 +7,8 @@ import ModalStore from '../store/ModalStore'
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { useWalletConnectContext } from 'WalletConnect/store/WalletConnectContext'
 
-export default function SessionSignSolanaModal() {
-  const {
-    approveSolanaRequest,
-    rejectSolanaRequest,
-  } = useWalletConnectContext()
+export default function SessionSignModal() {
+  const { approveRequest, rejectRequest } = useWalletConnectContext()
 
   // Get request and wallet data from store
   const { requestEvent, requestSession } = ModalStore.state.data ?? {}
@@ -26,8 +23,8 @@ export default function SessionSignSolanaModal() {
 
   // Handle approve action (logic varies based on request method)
   async function onApprove() {
-    if (requestEvent) {
-      await approveSolanaRequest(requestEvent)
+    if (requestEvent && requestSession) {
+      await approveRequest(requestEvent, requestSession)
       ModalStore.close()
     }
   }
@@ -35,7 +32,7 @@ export default function SessionSignSolanaModal() {
   // Handle reject action
   async function onReject() {
     if (requestEvent) {
-      await rejectSolanaRequest(requestEvent)
+      await rejectRequest(requestEvent)
       ModalStore.close()
     }
   }

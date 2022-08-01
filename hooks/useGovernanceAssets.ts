@@ -131,6 +131,11 @@ export default function useGovernanceAssets() {
 
   const commonInstructions = [
     {
+      id: Instructions.Bastion,
+      name: 'Bastion: Connect to dApp',
+      isVisible: canUseAnyInstruction,
+    },
+    {
       id: Instructions.Transfer,
       name: 'Transfer Tokens',
       isVisible: canUseTokenTransferInstruction,

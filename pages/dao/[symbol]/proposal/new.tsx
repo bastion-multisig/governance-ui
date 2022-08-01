@@ -96,6 +96,7 @@ import MakeRemoveOracle from './components/instructions/Mango/MakeRemoveOracle'
 import SagaPreOrder from './components/instructions/Solana/SagaPhone/SagaPreOrder'
 import MakeDepositToMangoAccount from './components/instructions/Mango/MakeDepositToMangoAccount'
 import MakeDepositToMangoAccountCsv from './components/instructions/Mango/MakeDepositToMangoAccountCsv'
+import Bastion from './components/instructions/Bastion/Bastion'
 
 const TITLE_LENGTH_LIMIT = 130
 
@@ -309,6 +310,8 @@ const New = () => {
 
   const getCurrentInstruction = ({ typeId, idx }) => {
     switch (typeId) {
+      case Instructions.Bastion:
+        return <Bastion index={idx} governance={governance} />
       case Instructions.Transfer:
         return (
           <SplTokenTransfer

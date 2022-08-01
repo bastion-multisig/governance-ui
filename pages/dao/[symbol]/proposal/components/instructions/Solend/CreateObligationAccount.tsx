@@ -108,7 +108,7 @@ const CreateObligationAccount = ({
 
   return (
     <GovernedAccountSelect
-      label="Governance"
+      label="Select the governance to use as your wallet"
       governedAccounts={assetAccounts}
       onChange={(value) => {
         handleSetForm({ value, propertyName: 'governedAccount' })
