@@ -73,7 +73,8 @@ const ProgramUpgrade = ({
       serializedInstruction = serializeInstructionToBase64(upgradeIx)
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedAccount?.governance,
     }

@@ -111,9 +111,9 @@ const SwitchboardRevokeOracle = ({
       SWITCHBOARD_REVOKE_AUTHORITY
     )
     return {
-      serializedInstruction: serializeInstructionToBase64(
-        revokeTx.instructions[0]
-      ),
+      serializedTransactions: [
+        [serializeInstructionToBase64(revokeTx.instructions[0])],
+      ],
       isValid: true,
       governance: gov,
     }

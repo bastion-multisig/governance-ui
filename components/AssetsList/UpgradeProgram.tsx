@@ -29,6 +29,7 @@ import ProgramUpgradeInfo from 'pages/dao/[symbol]/proposal/components/instructi
 import { getProgramName } from '@components/instructions/programs/names'
 import useCreateProposal from '@hooks/useCreateProposal'
 import useGovernanceAssets from '@hooks/useGovernanceAssets'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 interface UpgradeProgramCompactForm extends ProgramUpgradeForm {
   description: string
@@ -101,7 +102,7 @@ const UpgradeProgram = ({
   })
   async function getInstruction(): Promise<UiInstruction> {
     const isValid = await validateInstruction({ schema, form, setFormErrors })
-    let serializedInstruction = ''
+    let serializedInstruction: string | undefined = undefined
     if (
       isValid &&
       programId &&
@@ -117,7 +118,9 @@ const UpgradeProgram = ({
       serializedInstruction = serializeInstructionToBase64(upgradeIx)
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions: serializedInstruction
+        ? [[serializedInstruction]]
+        : undefined,
       isValid,
       governance: form.governedAccount?.governance,
     }
@@ -134,13 +137,17 @@ const UpgradeProgram = ({
         throw 'No realm selected'
       }
 
-      const instructionData = {
-        data: instruction.serializedInstruction
-          ? getInstructionDataFromBase64(instruction.serializedInstruction)
-          : null,
-        holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
-        prerequisiteInstructions: instruction.prerequisiteInstructions || [],
-      }
+      const instructionsData =
+        instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+          (tx) => {
+            return {
+              data: tx?.map(getInstructionDataFromBase64) ?? null,
+              holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
+              prerequisiteInstructions:
+                instruction.prerequisiteInstructions || [],
+            }
+          }
+        ) ?? []
       try {
         // Fetch governance to get up to date proposalCount
         const selectedGovernance = (await fetchRealmGovernance(
@@ -151,7 +158,7 @@ const UpgradeProgram = ({
           title: form.title ? form.title : proposalTitle,
           description: form.description ? form.description : '',
           governance: selectedGovernance,
-          instructionsData: [instructionData],
+          instructionsData,
           voteByCouncil,
           isDraft: false,
         })

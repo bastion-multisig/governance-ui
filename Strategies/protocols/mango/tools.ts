@@ -14,6 +14,7 @@ import {
 import {
   getInstructionDataFromBase64,
   getNativeTreasuryAddress,
+  InstructionData,
   serializeInstructionToBase64,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-governance'
@@ -215,8 +216,9 @@ const HandleMangoDeposit: HandleCreateProposalWithStrategy = async (
     matchedTreasury!.governance!.pubkey
   )
   let wrappedSolAccount: null | Keypair = null
-  const insts: InstructionDataWithHoldUpTime[] = []
-  const localPrequisteInstructions: TransactionInstruction[] = []
+  const insts: InstructionData[] = []
+  const prequisteInstructions: TransactionInstruction[] = []
+  const prerequisiteInstructionsSigners: Keypair[] = []
   if (matchedTreasury.isSol) {
     wrappedSolAccount = new Keypair()
     const lamports = decimalAmount * LAMPORTS_PER_SOL
@@ -225,7 +227,7 @@ const HandleMangoDeposit: HandleCreateProposalWithStrategy = async (
       space,
       'processed'
     )
-    localPrequisteInstructions.push(
+    prequisteInstructions.push(
       SystemProgram.createAccount({
         fromPubkey: rpcContext.wallet.publicKey!,
         newAccountPubkey: wrappedSolAccount?.publicKey,
@@ -244,50 +246,34 @@ const HandleMangoDeposit: HandleCreateProposalWithStrategy = async (
       toPubkey: wrappedSolAccount!.publicKey!,
       lamports: lamports,
     })
-    const instructionData = {
-      data: getInstructionDataFromBase64(
-        serializeInstructionToBase64(transferIx)
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [...localPrequisteInstructions],
-      prerequisiteInstructionsSigners: [wrappedSolAccount],
-    }
-    insts.push(instructionData)
+    insts.push(
+      getInstructionDataFromBase64(serializeInstructionToBase64(transferIx))
+    )
+    prerequisiteInstructionsSigners.push(wrappedSolAccount)
     const syncIx = syncNative(wrappedSolAccount.publicKey!)
-    const syncInst = {
-      data: getInstructionDataFromBase64(serializeInstructionToBase64(syncIx)),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [],
-    }
-    insts.push(syncInst)
+    insts.push(
+      getInstructionDataFromBase64(serializeInstructionToBase64(syncIx))
+    )
   }
-  const depositMangoAccountInsObj = {
-    data: getInstructionDataFromBase64(
-      serializeInstructionToBase64(
-        makeDepositInstruction(
-          groupConfig.mangoProgramId,
-          groupConfig.publicKey,
-          matchedTreasury.isSol
-            ? matchedTreasury.governance.pubkey!
-            : matchedTreasury.extensions.token!.account.owner!,
-          group.mangoCache,
-          mangoAccountPk,
-          quoteRootBank!.publicKey,
-          quoteNodeBank!.publicKey,
-          quoteNodeBank!.vault,
-          wrappedSolAccount?.publicKey ??
-            matchedTreasury.extensions.transferAddress!,
-          new BN(form.mintAmount)
-        )
+  const depositMangoAccountIns = getInstructionDataFromBase64(
+    serializeInstructionToBase64(
+      makeDepositInstruction(
+        groupConfig.mangoProgramId,
+        groupConfig.publicKey,
+        matchedTreasury.isSol
+          ? matchedTreasury.governance.pubkey!
+          : matchedTreasury.extensions.token!.account.owner!,
+        group.mangoCache,
+        mangoAccountPk,
+        quoteRootBank!.publicKey,
+        quoteNodeBank!.publicKey,
+        quoteNodeBank!.vault,
+        wrappedSolAccount?.publicKey ??
+          matchedTreasury.extensions.transferAddress!,
+        new BN(form.mintAmount)
       )
-    ),
-    holdUpTime: matchedTreasury.governance!.account!.config
-      .minInstructionHoldUpTime,
-    prerequisiteInstructions: [],
-    chunkSplitByDefault: true,
-  }
+    )
+  )
   if (!form.mangoAccountPk) {
     const createMangoAccountIns = makeCreateMangoAccountInstruction(
       groupConfig.mangoProgramId,
@@ -297,16 +283,11 @@ const HandleMangoDeposit: HandleCreateProposalWithStrategy = async (
       nextAccNumb,
       solAddress
     )
-    const instructionData = {
-      data: getInstructionDataFromBase64(
+    insts.push(
+      getInstructionDataFromBase64(
         serializeInstructionToBase64(createMangoAccountIns)
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [...prerequisiteInstructions],
-      splitToChunkByDefault: true,
-    }
-    insts.push(instructionData)
+      )
+    )
   }
   if (form.delegateAddress && form.delegateDeposit) {
     const delegateMangoAccount = makeSetDelegateInstruction(
@@ -316,36 +297,33 @@ const HandleMangoDeposit: HandleCreateProposalWithStrategy = async (
       matchedTreasury.governance!.pubkey,
       new PublicKey(form.delegateAddress)
     )
-    const instructionData = {
-      data: getInstructionDataFromBase64(
+    insts.push(
+      getInstructionDataFromBase64(
         serializeInstructionToBase64(delegateMangoAccount)
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [],
-      splitToChunkByDefault: true,
-    }
-    insts.push(instructionData)
+      )
+    )
   }
-  insts.push(depositMangoAccountInsObj)
+  insts.push(depositMangoAccountIns)
   if (wrappedSolAccount) {
-    const instructionData = {
-      data: getInstructionDataFromBase64(
-        serializeInstructionToBase64(
-          closeAccount({
-            source: wrappedSolAccount.publicKey,
-            destination: matchedTreasury.extensions.transferAddress,
-            owner: matchedTreasury.governance.pubkey,
-          })
-        )
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [],
-      splitToChunkByDefault: true,
-    }
+    const instructionData = getInstructionDataFromBase64(
+      serializeInstructionToBase64(
+        closeAccount({
+          source: wrappedSolAccount.publicKey,
+          destination: matchedTreasury.extensions.transferAddress,
+          owner: matchedTreasury.governance.pubkey,
+        })
+      )
+    )
     insts.push(instructionData)
   }
+
+  const instructions: InstructionDataWithHoldUpTime = {
+    data: insts,
+    holdUpTime: matchedTreasury.governance!.account!.config
+      .minInstructionHoldUpTime,
+    prerequisiteInstructions: [],
+  }
+
   const proposalAddress = await createProposal(
     rpcContext,
     realm,
@@ -360,7 +338,7 @@ const HandleMangoDeposit: HandleCreateProposalWithStrategy = async (
     form.description,
     governingTokenMint,
     proposalIndex,
-    insts,
+    [instructions],
     isDraft,
     client
   )

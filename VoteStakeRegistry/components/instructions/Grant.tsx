@@ -153,11 +153,11 @@ const Grant = ({
     }
 
     const obj: UiInstruction = {
-      serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedTokenAccount?.governance,
       prerequisiteInstructions: prerequisiteInstructions,
-      chunkSplitByDefault: true,
     }
     return obj
   }

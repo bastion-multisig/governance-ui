@@ -44,22 +44,20 @@ const DryRunInstructionBtn = ({
       }
       setIsPending(true)
       const instructionData = await getInstructionDataFcn()
-      const prerequisiteInstructionsToRun =
-        instructionData.prerequisiteInstructions
-      const additionalInstructions =
-        instructionData.additionalSerializedInstructions
       if (!instructionData?.isValid) {
         setIsPending(false)
         throw new Error('Invalid instruction')
       }
+      const instructionsData =
+        instructionData.serializedTransactions?.flatMap((tx) =>
+          tx.map(getInstructionDataFromBase64)
+        ) ?? []
+
       const result = await dryRunInstruction(
         connection.current,
         wallet!,
-        instructionData?.serializedInstruction
-          ? getInstructionDataFromBase64(instructionData?.serializedInstruction)
-          : null,
-        prerequisiteInstructionsToRun,
-        additionalInstructions?.map((x) => getInstructionDataFromBase64(x))
+        instructionsData,
+        instructionData.prerequisiteInstructions
       )
       setResult(result)
       setIsOpen(true)

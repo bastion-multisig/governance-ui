@@ -122,12 +122,12 @@ export async function getCastleDepositInstruction({
 
   // Build + return UI instruction
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
-    shouldSplitIntoSeparateTxs: true,
   }
 
   return obj
@@ -224,12 +224,12 @@ export async function getCastleWithdrawInstruction({
 
   // Build + return UI instruction
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
-    shouldSplitIntoSeparateTxs: true,
   }
 
   return obj

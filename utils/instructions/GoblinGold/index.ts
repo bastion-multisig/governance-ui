@@ -234,12 +234,12 @@ export async function getGoblinGoldDepositInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
-    shouldSplitIntoSeparateTxs: true,
   }
 
   return obj
@@ -340,12 +340,12 @@ export async function getGoblinGoldWithdrawInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
-    shouldSplitIntoSeparateTxs: true,
   }
 
   return obj

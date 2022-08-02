@@ -89,10 +89,10 @@ const CreateGatewayPluginRegistrar = ({
       serializedInstruction = serializeInstructionToBase64(createRegistrarIx)
     }
     return {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form!.governedAccount?.governance,
-      chunkSplitByDefault: true,
     }
   }
   useEffect(() => {

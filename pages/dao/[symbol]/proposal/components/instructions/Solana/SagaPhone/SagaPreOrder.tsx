@@ -123,8 +123,7 @@ const SagaPreOrder = ({
     }
     const obj: UiInstruction = {
       prerequisiteInstructions: prequisiteInstructions,
-      additionalSerializedInstructions: serializedInstructions,
-      serializedInstruction: '',
+      serializedTransactions: [serializedInstructions],
       isValid,
       governance: form.governedAccount?.governance,
     }

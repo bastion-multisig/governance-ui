@@ -25,6 +25,7 @@ import {
   ArrowCircleUpIcon,
 } from '@heroicons/react/outline'
 import useCreateProposal from '@hooks/useCreateProposal'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 interface AddMemberForm extends MintForm {
   description: string
@@ -129,13 +130,17 @@ const AddMemberForm = ({ close }) => {
 
         throw new Error('No realm selected')
       }
-      const instructionData = {
-        data: instruction.serializedInstruction
-          ? getInstructionDataFromBase64(instruction.serializedInstruction)
-          : null,
-        holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
-        prerequisiteInstructions: instruction.prerequisiteInstructions || [],
-      }
+      const instructionsData =
+        instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+          (tx) => {
+            return {
+              data: tx?.map(getInstructionDataFromBase64) ?? null,
+              holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
+              prerequisiteInstructions:
+                instruction.prerequisiteInstructions || [],
+            }
+          }
+        ) ?? []
 
       try {
         const selectedGovernance = (await fetchRealmGovernance(
@@ -146,7 +151,7 @@ const AddMemberForm = ({ close }) => {
           title: form.title ? form.title : proposalTitle,
           description: form.description ? form.description : '',
           governance: selectedGovernance,
-          instructionsData: [instructionData],
+          instructionsData,
           voteByCouncil,
           isDraft: false,
         })

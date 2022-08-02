@@ -30,6 +30,7 @@ import { notify } from '@utils/notifications'
 import useCreateProposal from '@hooks/useCreateProposal'
 import { AssetAccount } from '@utils/uiTypes/assets'
 import { PublicKey } from '@solana/web3.js'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 const defaultFormState = {
   destinationAccount: undefined,
@@ -121,13 +122,17 @@ const ConvertToStSol = () => {
       const governance = currentAccount?.governance
       const holdUpTime = governance?.account?.config.minInstructionHoldUpTime
 
-      const instructionData = {
-        data: instruction.serializedInstruction
-          ? getInstructionDataFromBase64(instruction.serializedInstruction)
-          : null,
-        holdUpTime: holdUpTime,
-        prerequisiteInstructions: instruction.prerequisiteInstructions || [],
-      }
+      const instructionsData: InstructionDataWithHoldUpTime[] =
+        instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+          (tx) => {
+            return {
+              data: tx?.map(getInstructionDataFromBase64) ?? null,
+              holdUpTime,
+              prerequisiteInstructions:
+                instruction.prerequisiteInstructions || [],
+            }
+          }
+        ) ?? []
 
       try {
         // Fetch governance to get up to date proposalCount
@@ -139,7 +144,7 @@ const ConvertToStSol = () => {
           title: form.title ? form.title : getProposalText(form.amount),
           description: form.description ? form.description : '',
           governance: selectedGovernance,
-          instructionsData: [instructionData],
+          instructionsData,
           voteByCouncil,
           isDraft: false,
         })

@@ -32,7 +32,6 @@ const Empty = ({
   async function getInstruction(): Promise<UiInstruction> {
     const isValid = await validateInstruction({ schema, form, setFormErrors })
     const obj: UiInstruction = {
-      serializedInstruction: '',
       isValid,
       governance: form.governedAccount?.governance,
     }

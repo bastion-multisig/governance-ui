@@ -79,7 +79,8 @@ const ConfigureGatewayPlugin = ({
       serializedInstruction = serializeInstructionToBase64(configureRegistrarTx)
     }
     return {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form!.governedAccount?.governance,
     }

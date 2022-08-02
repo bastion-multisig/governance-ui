@@ -93,13 +93,13 @@ const Clawback = ({
     }
 
     const obj: UiInstruction = {
-      serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: governancesArray.find(
         (x) => x.pubkey.toBase58() === realm?.account.authority?.toBase58()
       ),
       prerequisiteInstructions: prerequisiteInstructions,
-      chunkSplitByDefault: true,
     }
     return obj
   }

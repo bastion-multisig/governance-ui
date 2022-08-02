@@ -24,6 +24,7 @@ import {
 import {
   getInstructionDataFromBase64,
   Governance,
+  InstructionData,
   ProgramAccount,
   serializeInstructionToBase64,
   TOKEN_PROGRAM_ID,
@@ -48,7 +49,6 @@ import {
   getValidatedPublickKey,
   validateDoseTokenAccountMatchMint,
 } from '@utils/validations'
-import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 import BigNumber from 'bignumber.js'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
@@ -212,7 +212,8 @@ const WithdrawModal = ({
     }
 
     setIsLoading(true)
-    const proposalInstructions: InstructionDataWithHoldUpTime[] = []
+    const proposalInstructions: InstructionData[] = []
+    const proposalSigners: Keypair[] = []
     for (const i in selectedMangoAccount.spotOpenOrders) {
       if (selectedMangoAccount.spotOpenOrders[i].toBase58() !== emptyPk) {
         const closeOpenOrders = makeCloseSpotOpenOrdersInstruction(
@@ -226,13 +227,9 @@ const WithdrawModal = ({
           group.signerKey,
           true
         )
-        const closeInstruction: InstructionDataWithHoldUpTime = {
-          data: getInstructionDataFromBase64(
-            serializeInstructionToBase64(closeOpenOrders)
-          ),
-          holdUpTime: governance!.account!.config.minInstructionHoldUpTime,
-          prerequisiteInstructions: [],
-        }
+        const closeInstruction = getInstructionDataFromBase64(
+          serializeInstructionToBase64(closeOpenOrders)
+        )
         proposalInstructions.push(closeInstruction)
       }
     }
@@ -252,18 +249,9 @@ const WithdrawModal = ({
       new BN(mintAmount),
       false
     )
-    const instructionData: InstructionDataWithHoldUpTime = {
-      data: getInstructionDataFromBase64(
-        serializeInstructionToBase64(instruction)
-      ),
-      holdUpTime: governance!.account!.config.minInstructionHoldUpTime,
-      prerequisiteInstructions: prerequisiteInstructions,
-      prerequisiteInstructionsSigners: wrappedSolAccount
-        ? [wrappedSolAccount]
-        : [],
-      chunkSplitByDefault: true,
-      chunkBy: 1,
-    }
+    const instructionData = getInstructionDataFromBase64(
+      serializeInstructionToBase64(instruction)
+    )
     proposalInstructions.push(instructionData)
     if (
       wrappedSolAccount &&
@@ -275,16 +263,9 @@ const WithdrawModal = ({
         destination: new PublicKey(form.withdrawAddress),
         owner: new PublicKey(form.withdrawAddress),
       })
-      const closeAobInstructionData: InstructionDataWithHoldUpTime = {
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(closeAobInstruction)
-        ),
-        holdUpTime: governance!.account!.config.minInstructionHoldUpTime,
-        prerequisiteInstructions: [],
-        prerequisiteInstructionsSigners: [],
-        chunkSplitByDefault: true,
-        chunkBy: 1,
-      }
+      const closeAobInstructionData = getInstructionDataFromBase64(
+        serializeInstructionToBase64(closeAobInstruction)
+      )
       proposalInstructions.push(closeAobInstructionData)
     }
 
@@ -292,7 +273,14 @@ const WithdrawModal = ({
       const proposalAddress = await handleCreateProposal({
         title: form.title || proposalTitle,
         description: form.description,
-        instructionsData: [...proposalInstructions],
+        instructionsData: [
+          {
+            data: proposalInstructions,
+            holdUpTime: governance!.account!.config.minInstructionHoldUpTime,
+            prerequisiteInstructions: prerequisiteInstructions,
+            prerequisiteInstructionsSigners: proposalSigners,
+          },
+        ],
         governance: governance!,
         voteByCouncil,
       })

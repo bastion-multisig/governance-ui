@@ -106,10 +106,10 @@ const MakeRemovePerpMarket = ({
       serializedInstruction = serializeInstructionToBase64(removePerpMarketIx)
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedAccount?.governance,
-      chunkSplitByDefault: true,
     }
     return obj
   }

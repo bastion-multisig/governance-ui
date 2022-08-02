@@ -105,9 +105,9 @@ const SwitchboardAdmitOracle = ({
       SWITCHBOARD_GRANT_AUTHORITY
     )
     return {
-      serializedInstruction: serializeInstructionToBase64(
-        grantTx.instructions[0]
-      ),
+      serializedTransactions: [
+        [serializeInstructionToBase64(grantTx.instructions[0])],
+      ],
       isValid: true,
       governance: gov,
     }

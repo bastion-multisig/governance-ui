@@ -127,7 +127,8 @@ export default function StreamCard({
       )?.governance
       serializedInstruction = serializeInstructionToBase64(instruction)
       const obj: UiInstruction = {
-        serializedInstruction: serializedInstruction,
+        serializedTransactions:
+          serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
         isValid: true,
         governance,
       }

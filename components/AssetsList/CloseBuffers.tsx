@@ -140,7 +140,8 @@ const CloseBuffers = ({ program }: { program: ProgramAccount<Governance> }) => {
         serializedInstruction = serializeInstructionToBase64(closeIx)
       }
       const obj: UiInstruction = {
-        serializedInstruction: serializedInstruction,
+        serializedTransactions:
+          serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
         isValid,
         governance: form.governedAccount?.governance,
       }

@@ -121,7 +121,8 @@ export async function getGenericTransferInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: requiredStateInfo.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -199,7 +200,8 @@ export async function getTransferInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: currentAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -244,7 +246,8 @@ export async function getSolTransferInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: currentAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -337,7 +340,8 @@ export async function getTransferNftInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: currentAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -406,7 +410,8 @@ export async function getMintInstruction({
     serializedInstruction = serializeInstructionToBase64(transferIx)
   }
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedMintInfoAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -507,7 +512,8 @@ export async function getConvertToMsolInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: form.governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -603,7 +609,8 @@ export async function getConvertToStSolInstruction({
   }
 
   return {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: form.governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -785,7 +792,8 @@ export async function getCreateTokenMetadataInstruction({
     serializedInstruction = serializeInstructionToBase64(transferIx)
   }
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedMintInfoAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
@@ -842,7 +850,8 @@ export async function getUpdateTokenMetadataInstruction({
   }
 
   const obj: UiInstruction = {
-    serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: governedMintInfoAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,

@@ -12,17 +12,13 @@ import { consts as foresightConsts } from '@foresight-tmp/foresight-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
 
 export interface UiInstruction {
-  serializedInstruction: string
-  additionalSerializedInstructions?: string[]
+  serializedTransactions?: string[][]
   isValid: boolean
   governance: ProgramAccount<Governance> | undefined
   customHoldUpTime?: number
   prerequisiteInstructions?: TransactionInstruction[]
-  chunkSplitByDefault?: boolean
   prerequisiteInstructionsSigners?: Keypair[]
-  chunkBy?: number
   signers?: Keypair[]
-  shouldSplitIntoSeparateTxs?: boolean | undefined
 }
 
 export interface SplTokenTransferForm {

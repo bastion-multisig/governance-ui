@@ -65,7 +65,6 @@ const CreateObligationAccount = ({
       !wallet?.publicKey
     ) {
       return {
-        serializedInstruction: '',
         isValid: false,
         governance: form.governedAccount?.governance,
       }
@@ -77,7 +76,7 @@ const CreateObligationAccount = ({
     })
 
     return {
-      serializedInstruction: serializeInstructionToBase64(tx),
+      serializedTransactions: [[serializeInstructionToBase64(tx)]],
       isValid: true,
       governance: form.governedAccount.governance,
     }

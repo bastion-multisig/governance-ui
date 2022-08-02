@@ -29,6 +29,7 @@ import { useRouter } from 'next/router'
 import { notify } from '@utils/notifications'
 import useCreateProposal from '@hooks/useCreateProposal'
 import { AssetAccount } from '@utils/uiTypes/assets'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 const ConvertToMsol = () => {
   const { canChooseWhoVote, realm, symbol } = useRealm()
@@ -93,13 +94,17 @@ const ConvertToMsol = () => {
       const governance = currentAccount?.governance
       const holdUpTime = governance?.account?.config.minInstructionHoldUpTime
 
-      const instructionData = {
-        data: instruction.serializedInstruction
-          ? getInstructionDataFromBase64(instruction.serializedInstruction)
-          : null,
-        holdUpTime: holdUpTime,
-        prerequisiteInstructions: instruction.prerequisiteInstructions || [],
-      }
+      const instructionsData =
+        instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+          (tx) => {
+            return {
+              data: tx?.map(getInstructionDataFromBase64) ?? null,
+              holdUpTime,
+              prerequisiteInstructions:
+                instruction.prerequisiteInstructions || [],
+            }
+          }
+        ) ?? []
 
       try {
         // Fetch governance to get up to date proposalCount
@@ -111,7 +116,7 @@ const ConvertToMsol = () => {
           title: form.title ? form.title : proposalTitle,
           description: form.description ? form.description : '',
           governance: selectedGovernance,
-          instructionsData: [instructionData],
+          instructionsData,
           voteByCouncil,
           isDraft: false,
         })

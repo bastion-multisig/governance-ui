@@ -1,9 +1,4 @@
-import {
-  Keypair,
-  PublicKey,
-  Transaction,
-  TransactionInstruction,
-} from '@solana/web3.js'
+import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
 
 import {
   getGovernanceProgramVersion,
@@ -19,27 +14,21 @@ import {
 import { RpcContext } from '@solana/spl-governance'
 import { withInsertTransaction } from '@solana/spl-governance'
 import { InstructionData } from '@solana/spl-governance'
-import { sendTransaction } from 'utils/send'
 import { withSignOffProposal } from '@solana/spl-governance'
 import {
   sendTransactionsV2,
   SequenceType,
   transactionInstructionsToTypedInstructionsSets,
 } from '@utils/sendTransactions'
-import { chunks } from '@utils/helpers'
 import { UiInstruction } from '@utils/uiTypes/proposalCreationTypes'
 import { VotingClient } from '@utils/uiTypes/VotePlugin'
-import { NftVoterClient } from '@solana/governance-program-library'
 import { withAddSignatory } from '@solana/spl-governance'
 
 export interface InstructionDataWithHoldUpTime {
-  data: InstructionData | null
+  data: InstructionData[] | null
   holdUpTime: number | undefined
   prerequisiteInstructions: TransactionInstruction[]
-  chunkSplitByDefault?: boolean
-  chunkBy?: number
   signers?: Keypair[]
-  shouldSplitIntoSeparateTxs?: boolean | undefined
   prerequisiteInstructionsSigners?: Keypair[]
 }
 
@@ -51,16 +40,16 @@ export class InstructionDataWithHoldUpTime {
     instruction: UiInstruction
     governance?: ProgramAccount<Governance>
   }) {
-    this.data = instruction.serializedInstruction
-      ? getInstructionDataFromBase64(instruction.serializedInstruction)
+    this.data = instruction.serializedTransactions?.length
+      ? instruction.serializedTransactions.flatMap((tx) =>
+          tx.map(getInstructionDataFromBase64)
+        )
       : null
     this.holdUpTime =
-      typeof instruction.customHoldUpTime !== 'undefined'
+      instruction.customHoldUpTime !== undefined
         ? instruction.customHoldUpTime
         : governance?.account?.config.minInstructionHoldUpTime
     this.prerequisiteInstructions = instruction.prerequisiteInstructions || []
-    this.chunkSplitByDefault = instruction.chunkSplitByDefault || false
-    this.chunkBy = instruction.chunkBy || 2
     this.prerequisiteInstructionsSigners =
       instruction.prerequisiteInstructionsSigners || []
   }
@@ -84,14 +73,8 @@ export const createProposal = async (
   const governanceAuthority = walletPubkey
   const signatory = walletPubkey
   const payer = walletPubkey
-  const notificationTitle = isDraft ? 'proposal draft' : 'proposal'
   const prerequisiteInstructions: TransactionInstruction[] = []
   const prerequisiteInstructionsSigners: Keypair[] = []
-  // sum up signers
-  const signers: Keypair[] = instructionsData.flatMap((x) => x.signers ?? [])
-  const shouldSplitIntoSeparateTxs: boolean = instructionsData
-    .flatMap((x) => x.shouldSplitIntoSeparateTxs)
-    .some((x) => x)
 
   // Explicitly request the version before making RPC calls to work around race conditions in resolving
   // the version for RealmInfo
@@ -153,13 +136,6 @@ export const createProposal = async (
   )
 
   const insertInstructions: TransactionInstruction[] = []
-  const splitToChunkByDefault = instructionsData.filter(
-    (x) => x.chunkSplitByDefault
-  ).length
-  const chunkBys = instructionsData
-    .filter((x) => x.chunkBy)
-    .map((x) => x.chunkBy!)
-  const chunkBy = chunkBys.length ? Math.min(...chunkBys) : 2
   for (const [index, instruction] of instructionsData
     .filter((x) => x.data)
     .entries()) {
@@ -183,13 +159,11 @@ export const createProposal = async (
         index,
         0,
         instruction.holdUpTime || 0,
-        [instruction.data],
+        instruction.data,
         payer
       )
     }
   }
-
-  const insertInstructionCount = insertInstructions.length
 
   if (!isDraft) {
     withSignOffProposal(
@@ -205,81 +179,24 @@ export const createProposal = async (
     )
   }
 
-  if (shouldSplitIntoSeparateTxs) {
-    const transaction1 = new Transaction()
-    const transaction2 = new Transaction()
-
-    transaction1.add(...prerequisiteInstructions, ...instructions)
-    transaction2.add(...insertInstructions)
-
-    await sendTransaction({
-      transaction: transaction1,
-      wallet,
-      connection,
-      signers,
-      sendingMessage: `creating ${notificationTitle}`,
-      successMessage: `${notificationTitle} created`,
-    })
-    await sendTransaction({
-      transaction: transaction2,
-      wallet,
-      connection,
-      signers: undefined,
-      sendingMessage: `inserting into ${notificationTitle}`,
-      successMessage: `inserted into ${notificationTitle}`,
-    })
-  } else if (
-    insertInstructionCount <= 2 &&
-    !splitToChunkByDefault &&
-    !(client?.client instanceof NftVoterClient)
-  ) {
-    // This is an arbitrary threshold and we assume that up to 2 instructions can be inserted as a single Tx
-    // This is conservative setting and we might need to revise it if we have more empirical examples or
-    // reliable way to determine Tx size
-    // We merge instructions with prerequisiteInstructions
-    // Prerequisite  instructions can came from instructions as something we need to do before instruction can be executed
-    // For example we create ATAs if they don't exist as part of the proposal creation flow
-
-    await sendTransactionsV2({
-      wallet,
-      connection,
-      signersSet: [[], [], signers],
-      showUiComponent: true,
-      TransactionInstructions: [
-        prerequisiteInstructions,
-        instructions,
-        insertInstructions,
-      ].map((x) =>
-        transactionInstructionsToTypedInstructionsSets(
-          x,
-          SequenceType.Sequential
-        )
-      ),
-    })
-  } else {
-    const insertChunks = chunks(insertInstructions, chunkBy)
-    const signerChunks = Array(insertChunks.length)
-    signerChunks.push(...chunks(signers, chunkBy))
-    signerChunks.fill([])
-
-    console.log(`Creating proposal using ${insertChunks.length} chunks`)
-    await sendTransactionsV2({
-      wallet,
-      connection,
-      signersSet: [[...prerequisiteInstructionsSigners], [], ...signerChunks],
-      showUiComponent: true,
-      TransactionInstructions: [
-        prerequisiteInstructions,
-        instructions,
-        ...insertChunks,
-      ].map((x) =>
-        transactionInstructionsToTypedInstructionsSets(
-          x,
-          SequenceType.Sequential
-        )
-      ),
-    })
-  }
+  console.log(`Creating proposal using ${insertInstructions.length} chunks`)
+  await sendTransactionsV2({
+    wallet,
+    connection,
+    signersSet: [
+      [...prerequisiteInstructionsSigners],
+      [],
+      ...instructionsData.map((ins) => ins.signers ?? []),
+    ],
+    showUiComponent: true,
+    TransactionInstructions: [
+      prerequisiteInstructions,
+      instructions,
+      ...insertInstructions.map((ix) => [ix]),
+    ].map((x) =>
+      transactionInstructionsToTypedInstructionsSets(x, SequenceType.Sequential)
+    ),
+  })
 
   return proposalAddress
 }

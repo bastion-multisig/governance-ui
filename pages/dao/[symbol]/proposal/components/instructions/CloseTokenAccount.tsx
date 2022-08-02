@@ -134,8 +134,10 @@ const CloseTokenAccount = ({
     }
     const obj: UiInstruction = {
       prerequisiteInstructions: [],
-      serializedInstruction: serializedInstructionClose,
-      additionalSerializedInstructions: [],
+      serializedTransactions:
+        serializedInstructionClose !== ''
+          ? [[serializedInstructionClose]]
+          : undefined,
       isValid,
       governance: form!.governedAccount?.governance,
     }
@@ -143,7 +145,7 @@ const CloseTokenAccount = ({
       obj.prerequisiteInstructions?.push(instructions?.ataInstruction)
     }
     if (serializedTransfer) {
-      obj.additionalSerializedInstructions!.push(serializedTransfer)
+      obj.serializedTransactions!.push([serializedTransfer])
     }
     return obj
   }

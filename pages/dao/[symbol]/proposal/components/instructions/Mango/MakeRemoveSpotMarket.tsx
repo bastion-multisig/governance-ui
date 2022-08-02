@@ -103,7 +103,8 @@ const MakeRemoveSpotMarket = ({
       serializedInstruction = serializeInstructionToBase64(removePerpMarketIx)
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedAccount?.governance,
     }

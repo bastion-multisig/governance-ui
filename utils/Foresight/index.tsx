@@ -262,7 +262,8 @@ function getUiInstruction(
   form: ForesightHasGovernedAccount
 ): UiInstruction {
   return {
-    serializedInstruction: serializedInstruction,
+    serializedTransactions:
+      serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
     isValid,
     governance: form.governedAccount?.governance,
   }

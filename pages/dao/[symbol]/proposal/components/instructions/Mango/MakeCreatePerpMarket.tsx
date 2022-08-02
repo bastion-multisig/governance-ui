@@ -201,7 +201,8 @@ const MakeCreatePerpMarket = ({
       serializedInstruction = serializeInstructionToBase64(instruction)
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedAccount?.governance,
     }

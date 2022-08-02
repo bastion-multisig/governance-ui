@@ -53,7 +53,8 @@ const CustomBase64 = ({
       serializedInstruction = form.base64
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedAccount?.governance,
       customHoldUpTime: form.holdUpTime,

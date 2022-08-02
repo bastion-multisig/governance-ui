@@ -6,6 +6,7 @@ import {
   RpcContext,
   serializeInstructionToBase64,
   TokenOwnerRecord,
+  InstructionData,
 } from '@solana/spl-governance'
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -289,7 +290,9 @@ async function handleSolendAction(
   client?: VotingClient
 ) {
   const isSol = matchedTreasury.isSol
-  const insts: InstructionDataWithHoldUpTime[] = []
+  const insts: InstructionData[] = []
+  const setupInsts: InstructionData[] = []
+  const cleanupInsts: InstructionData[] = []
   const owner = isSol
     ? matchedTreasury!.pubkey
     : matchedTreasury!.extensions!.token!.account.owner
@@ -348,20 +351,11 @@ async function handleSolendAction(
   }
 
   if (createAtaInst) {
-    const createAtaInstObj = {
-      data: getInstructionDataFromBase64(
-        serializeInstructionToBase64(createAtaInst)
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [],
-      chunkSplitByDefault: true,
-    }
+    const createAtaInstObj = getInstructionDataFromBase64(
+      serializeInstructionToBase64(createAtaInst)
+    )
     insts.push(createAtaInstObj)
   }
-
-  const setupInsts: InstructionDataWithHoldUpTime[] = []
-  const cleanupInsts: InstructionDataWithHoldUpTime[] = []
 
   if (isSol) {
     const userWSOLAccountInfo = await connection.current.getAccountInfo(
@@ -382,15 +376,9 @@ async function handleSolendAction(
         (sendAction ? form.bnAmount.toNumber() : 0),
     })
 
-    const transferLamportInst = {
-      data: getInstructionDataFromBase64(
-        serializeInstructionToBase64(transferLamportsIx)
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [],
-      chunkSplitByDefault: true,
-    }
+    const transferLamportInst = getInstructionDataFromBase64(
+      serializeInstructionToBase64(transferLamportsIx)
+    )
 
     setupInsts.push(transferLamportInst)
 
@@ -402,27 +390,15 @@ async function handleSolendAction(
       []
     )
 
-    const closeWSOLInst = {
-      data: getInstructionDataFromBase64(
-        serializeInstructionToBase64(closeWSOLAccountIx)
-      ),
-      holdUpTime: matchedTreasury.governance!.account!.config
-        .minInstructionHoldUpTime,
-      prerequisiteInstructions: [],
-      chunkSplitByDefault: true,
-    }
+    const closeWSOLInst = getInstructionDataFromBase64(
+      serializeInstructionToBase64(closeWSOLAccountIx)
+    )
 
     if (userWSOLAccountInfo) {
       const syncIx = syncNative(liquidityATA)
-      const syncInst = {
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(syncIx)
-        ),
-        holdUpTime: matchedTreasury.governance!.account!.config
-          .minInstructionHoldUpTime,
-        prerequisiteInstructions: [],
-        chunkSplitByDefault: true,
-      }
+      const syncInst = getInstructionDataFromBase64(
+        serializeInstructionToBase64(syncIx)
+      )
       if (sendAction) {
         setupInsts.push(syncInst)
       } else {
@@ -437,15 +413,9 @@ async function handleSolendAction(
         owner,
         owner
       )
-      const createUserWSOLAccountInst = {
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(createUserWSOLAccountIx)
-        ),
-        holdUpTime: matchedTreasury.governance!.account!.config
-          .minInstructionHoldUpTime,
-        prerequisiteInstructions: [],
-        chunkSplitByDefault: true,
-      }
+      const createUserWSOLAccountInst = getInstructionDataFromBase64(
+        serializeInstructionToBase64(createUserWSOLAccountIx)
+      )
       setupInsts.push(createUserWSOLAccountInst)
       cleanupInsts.push(closeWSOLInst)
     }
@@ -478,14 +448,24 @@ async function handleSolendAction(
           new PublicKey(slndProgramAddress)
         )
 
-  const depositSolendInsObj = {
-    data: getInstructionDataFromBase64(serializeInstructionToBase64(actionIx)),
-    holdUpTime: matchedTreasury.governance!.account!.config
-      .minInstructionHoldUpTime,
-    prerequisiteInstructions: [],
-    chunkSplitByDefault: true,
-  }
+  const depositSolendInsObj = getInstructionDataFromBase64(
+    serializeInstructionToBase64(actionIx)
+  )
+
   insts.push(depositSolendInsObj)
+
+  const instructions: InstructionDataWithHoldUpTime[] = [
+    ...setupInsts,
+    ...insts,
+    ...cleanupInsts,
+  ].map((inst) => {
+    return {
+      data: [inst],
+      holdUpTime: matchedTreasury.governance!.account!.config
+        .minInstructionHoldUpTime,
+      prerequisiteInstructions: [],
+    }
+  })
 
   const proposalAddress = await createProposal(
     rpcContext,
@@ -503,7 +483,7 @@ async function handleSolendAction(
     form.description,
     governingTokenMint,
     proposalIndex,
-    [...setupInsts, ...insts, ...cleanupInsts],
+    instructions,
     isDraft,
     client
   )

@@ -76,7 +76,6 @@ const DepositReserveLiquidityAndObligationCollateral = ({
       !form.mintName
     ) {
       return {
-        serializedInstruction: '',
         isValid: false,
         governance: form.governedAccount?.governance,
       }
@@ -96,7 +95,7 @@ const DepositReserveLiquidityAndObligationCollateral = ({
     })
 
     return {
-      serializedInstruction: serializeInstructionToBase64(tx),
+      serializedTransactions: [[serializeInstructionToBase64(tx)]],
       isValid: true,
       governance: form.governedAccount.governance,
     }

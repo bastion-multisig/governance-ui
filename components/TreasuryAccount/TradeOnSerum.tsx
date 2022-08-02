@@ -414,12 +414,11 @@ const TradeOnSerum: React.FC<TradeOnSerumProps> = ({ tokenAccount }) => {
 
       const serializedIx = serializeInstructionToBase64(instruction)
 
-      const instructionData = {
-        data: getInstructionDataFromBase64(serializedIx),
+      const instructionData: InstructionDataWithHoldUpTime = {
+        data: [getInstructionDataFromBase64(serializedIx)],
         holdUpTime:
           currentAccount?.governance?.account?.config.minInstructionHoldUpTime,
         prerequisiteInstructions,
-        shouldSplitIntoSeparateTxs: true,
       }
       proposalInstructions.push(instructionData)
 

@@ -24,11 +24,9 @@ export default function InspectorButton({
     let inspectUrl = ''
     if (!wasExecuted) {
       const instructionData = proposalInstruction.account.getSingleInstruction()
-      const result = await dryRunInstruction(
-        connection.current,
-        wallet!,
-        instructionData
-      )
+      const result = await dryRunInstruction(connection.current, wallet!, [
+        instructionData,
+      ])
 
       inspectUrl = getExplorerInspectorUrl(
         connection.endpoint,

@@ -237,49 +237,29 @@ const New = () => {
         throw Error('No governance selected')
       }
 
-      const additionalInstructions = [
+      const instructionsData = [
         ...(instructions
           .flatMap((instruction) => {
-            return instruction.additionalSerializedInstructions?.map((x) => {
-              return {
-                data: x ? getInstructionDataFromBase64(x) : null,
-                holdUpTime: instruction.customHoldUpTime
-                  ? getTimestampFromDays(instruction.customHoldUpTime)
-                  : selectedGovernance?.account?.config
-                      .minInstructionHoldUpTime,
-                prerequisiteInstructions:
-                  instruction.prerequisiteInstructions || [],
-                chunkSplitByDefault: instruction.chunkSplitByDefault || false,
-                signers: instruction.signers,
-                shouldSplitIntoSeparateTxs:
-                  instruction.shouldSplitIntoSeparateTxs,
+            return instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+              (tx) => {
+                return {
+                  data: tx.map(getInstructionDataFromBase64),
+                  holdUpTime: instruction.customHoldUpTime
+                    ? getTimestampFromDays(instruction.customHoldUpTime)
+                    : selectedGovernance?.account?.config
+                        .minInstructionHoldUpTime,
+                  prerequisiteInstructions:
+                    instruction.prerequisiteInstructions || [],
+                  signers: instruction.signers,
+                }
               }
-            })
+            )
           })
           .filter((x) => x) as InstructionDataWithHoldUpTime[]),
       ]
 
-      const instructionsData = [
-        ...additionalInstructions,
-        ...instructions.map((x) => {
-          return {
-            data: x.serializedInstruction
-              ? getInstructionDataFromBase64(x.serializedInstruction)
-              : null,
-            holdUpTime: x.customHoldUpTime
-              ? getTimestampFromDays(x.customHoldUpTime)
-              : selectedGovernance?.account?.config.minInstructionHoldUpTime,
-            prerequisiteInstructions: x.prerequisiteInstructions || [],
-            chunkSplitByDefault: x.chunkSplitByDefault || false,
-            signers: x.signers,
-            shouldSplitIntoSeparateTxs: x.shouldSplitIntoSeparateTxs,
-          }
-        }),
-      ]
-
       try {
         // Fetch governance to get up to date proposalCount
-
         if (governance.pubkey != undefined) {
           selectedGovernance = (await fetchRealmGovernance(
             governance.pubkey

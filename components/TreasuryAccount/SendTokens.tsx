@@ -50,6 +50,7 @@ import NFTSelector from '@components/NFTS/NFTSelector'
 import { NFTWithMint } from '@utils/uiTypes/nfts'
 import useCreateProposal from '@hooks/useCreateProposal'
 import NFTAccountSelect from './NFTAccountSelect'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 const SendTokens = ({
   isNft = false,
@@ -176,13 +177,20 @@ const SendTokens = ({
           setIsLoading(false)
           throw 'No realm selected'
         }
-        const instructionData = {
-          data: instruction.serializedInstruction
-            ? getInstructionDataFromBase64(instruction.serializedInstruction)
-            : null,
-          holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
-          prerequisiteInstructions: instruction.prerequisiteInstructions || [],
-        }
+
+        const instructionsData: InstructionDataWithHoldUpTime[] =
+          instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+            (tx) => {
+              return {
+                data: tx?.map(getInstructionDataFromBase64) ?? null,
+                holdUpTime:
+                  governance?.account?.config.minInstructionHoldUpTime,
+                prerequisiteInstructions:
+                  instruction.prerequisiteInstructions || [],
+              }
+            }
+          ) ?? []
+
         try {
           // Fetch governance to get up to date proposalCount
           const selectedGovernance = (await fetchRealmGovernance(
@@ -192,7 +200,7 @@ const SendTokens = ({
             title: form.title ? form.title : proposalTitle,
             description: form.description ? form.description : '',
             voteByCouncil,
-            instructionsData: [instructionData],
+            instructionsData,
             governance: selectedGovernance!,
           })
           const url = fmtUrlWithCluster(
@@ -233,13 +241,18 @@ const SendTokens = ({
         setIsLoading(false)
         throw 'No realm selected'
       }
-      const instructionData = {
-        data: instruction.serializedInstruction
-          ? getInstructionDataFromBase64(instruction.serializedInstruction)
-          : null,
-        holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
-        prerequisiteInstructions: instruction.prerequisiteInstructions || [],
-      }
+
+      const instructionsData: InstructionDataWithHoldUpTime[] =
+        instruction.serializedTransactions?.map<InstructionDataWithHoldUpTime>(
+          (tx) => {
+            return {
+              data: tx?.map(getInstructionDataFromBase64) ?? null,
+              holdUpTime: governance?.account?.config.minInstructionHoldUpTime,
+              prerequisiteInstructions:
+                instruction.prerequisiteInstructions || [],
+            }
+          }
+        ) ?? []
       try {
         // Fetch governance to get up to date proposalCount
         const selectedGovernance = (await fetchRealmGovernance(
@@ -249,7 +262,7 @@ const SendTokens = ({
           title: form.title ? form.title : proposalTitle,
           description: form.description ? form.description : '',
           voteByCouncil,
-          instructionsData: [instructionData],
+          instructionsData,
           governance: selectedGovernance!,
         })
         const url = fmtUrlWithCluster(

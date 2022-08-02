@@ -77,7 +77,6 @@ const WithdrawObligationCollateralAndRedeemReserveLiquidity = ({
       !form.mintName
     ) {
       return {
-        serializedInstruction: '',
         isValid: false,
         governance: form.governedAccount?.governance,
       }
@@ -100,7 +99,7 @@ const WithdrawObligationCollateralAndRedeemReserveLiquidity = ({
     })
 
     return {
-      serializedInstruction: serializeInstructionToBase64(tx),
+      serializedTransactions: [[serializeInstructionToBase64(tx)]],
       isValid: true,
       governance: form.governedAccount.governance,
     }

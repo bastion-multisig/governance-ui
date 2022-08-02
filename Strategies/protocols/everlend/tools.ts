@@ -1,6 +1,7 @@
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
 import {
   getInstructionDataFromBase64,
+  InstructionData,
   ProgramAccount,
   Realm,
   RpcContext,
@@ -107,7 +108,7 @@ export async function handleEverlendAction(
   client?: VotingClient
 ) {
   const isSol = matchedTreasury.isSol
-  const insts: InstructionDataWithHoldUpTime[] = []
+  const insts: InstructionData[] = []
   const owner = isSol
     ? matchedTreasury!.pubkey
     : matchedTreasury!.extensions!.token!.account.owner
@@ -131,8 +132,8 @@ export async function handleEverlendAction(
     true
   )
 
-  const setupInsts: InstructionDataWithHoldUpTime[] = []
-  const cleanupInsts: InstructionDataWithHoldUpTime[] = []
+  const setupInsts: InstructionData[] = []
+  const cleanupInsts: InstructionData[] = []
 
   if (form.action === 'Deposit') {
     const actionTx = await handleEverlendDeposit(
@@ -146,14 +147,9 @@ export async function handleEverlendAction(
       liquidityATA
     )
     actionTx.instructions.map((instruction) => {
-      insts.push({
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(instruction)
-        ),
-        holdUpTime: matchedTreasury.governance!.account!.config
-          .minInstructionHoldUpTime,
-        prerequisiteInstructions: [],
-      })
+      insts.push(
+        getInstructionDataFromBase64(serializeInstructionToBase64(instruction))
+      )
     })
   } else if (form.action === 'Withdraw') {
     const { withdrawTx, closeIx } = await handleEverlendWithdraw(
@@ -168,30 +164,24 @@ export async function handleEverlendAction(
     )
 
     withdrawTx.instructions.map((instruction) => {
-      insts.push({
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(instruction)
-        ),
-        holdUpTime: matchedTreasury.governance!.account!.config
-          .minInstructionHoldUpTime,
-        prerequisiteInstructions: [],
-        chunkSplitByDefault: true,
-      })
+      insts.push(
+        getInstructionDataFromBase64(serializeInstructionToBase64(instruction))
+      )
     })
 
     if (closeIx) {
-      cleanupInsts.push({
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(closeIx)
-        ),
-        holdUpTime: matchedTreasury.governance!.account!.config
-          .minInstructionHoldUpTime,
-        prerequisiteInstructions: [],
-        chunkSplitByDefault: true,
-      })
+      cleanupInsts.push(
+        getInstructionDataFromBase64(serializeInstructionToBase64(closeIx))
+      )
     }
   }
 
+  const instructions: InstructionDataWithHoldUpTime = {
+    data: [...setupInsts, ...insts, ...cleanupInsts],
+    holdUpTime: matchedTreasury.governance!.account!.config
+      .minInstructionHoldUpTime,
+    prerequisiteInstructions: [],
+  }
   const proposalAddress = await createProposal(
     rpcContext,
     realm,
@@ -201,7 +191,7 @@ export async function handleEverlendAction(
     form.description,
     governingTokenMint,
     proposalIndex,
-    [...setupInsts, ...insts, ...cleanupInsts],
+    [instructions],
     isDraft,
     client
   )

@@ -74,9 +74,11 @@ const DelegateForm = ({
     )
     try {
       const instructionData: InstructionDataWithHoldUpTime = {
-        data: getInstructionDataFromBase64(
-          serializeInstructionToBase64(delegateMangoAccount)
-        ),
+        data: [
+          getInstructionDataFromBase64(
+            serializeInstructionToBase64(delegateMangoAccount)
+          ),
+        ],
         holdUpTime: governance!.account!.config.minInstructionHoldUpTime,
         prerequisiteInstructions: [],
       }

@@ -160,11 +160,9 @@ const MakeDepositToMangoAccountCsv = ({
       }
     }
     const obj: UiInstruction = {
-      serializedInstruction: '',
-      additionalSerializedInstructions: serializedInstructions,
+      serializedTransactions: [serializedInstructions],
       isValid,
       governance: form.governedAccount?.governance,
-      chunkSplitByDefault: true,
     }
     return obj
   }

@@ -210,7 +210,6 @@ const CreateStream = ({
       !wallet?.publicKey
     ) {
       return {
-        serializedInstruction: '',
         isValid: false,
         governance: form.tokenAccount?.governance,
       }
@@ -316,11 +315,10 @@ const CreateStream = ({
     )
     const signers: Keypair[] = [strmMetadata]
     return {
-      serializedInstruction: serializeInstructionToBase64(tx),
+      serializedTransactions: [[serializeInstructionToBase64(tx)]],
       isValid: true,
       governance: form.tokenAccount.governance,
       prerequisiteInstructions: prerequisiteInstructions,
-      shouldSplitIntoSeparateTxs: true,
       signers,
     }
   }

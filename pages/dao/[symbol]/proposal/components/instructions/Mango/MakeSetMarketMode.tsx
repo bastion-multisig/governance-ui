@@ -87,7 +87,8 @@ const MakeSetMarketMode = ({
       serializedInstruction = serializeInstructionToBase64(addOracleIx)
     }
     const obj: UiInstruction = {
-      serializedInstruction: serializedInstruction,
+      serializedTransactions:
+        serializedInstruction !== '' ? [[serializedInstruction]] : undefined,
       isValid,
       governance: form.governedAccount?.governance,
     }
