@@ -31,7 +31,7 @@ export const executeInstructions = async (
         proposal.account.governance,
         proposal.pubkey,
         instruction.pubkey,
-        [instruction.account.getSingleInstruction()]
+        instruction.account.instructions
       )
     )
   )
@@ -45,7 +45,7 @@ export const executeInstructions = async (
       TransactionInstructions: instructions.map((x) =>
         transactionInstructionsToTypedInstructionsSets(
           [x],
-          SequenceType.Parallel
+          SequenceType.Sequential
         )
       ),
     })

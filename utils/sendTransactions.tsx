@@ -604,6 +604,71 @@ export const sendTransactionsV2 = async ({
   }
 }
 
+/////////////////////////////////////////
+export const sendAll = async ({
+  connection,
+  wallet,
+  transactionInstructions,
+  signersSet,
+  showUiComponent = false,
+}: {
+  connection: Connection
+  wallet: WalletSigner
+  transactionInstructions: TransactionInstruction[][]
+  signersSet: Keypair[][]
+  showUiComponent?: boolean
+}) => {
+  if (!wallet.publicKey) throw new Error('Wallet not connected!')
+  //block will be used for timeout calculation
+  const block = await connection.getLatestBlockhash('confirmed')
+
+  const transactions = transactionInstructions
+    .filter((ixs) => ixs.length)
+    .map((ixs, i) => {
+      const transaction = new Transaction({
+        feePayer: wallet.publicKey,
+        recentBlockhash: block?.blockhash,
+      }).add(...ixs)
+      if (signersSet[i].length > 0) {
+        transaction.partialSign(...signersSet[i])
+      }
+      return transaction
+    })
+
+  const signedTxns = await wallet.signAllTransactions(transactions)
+  if (showUiComponent) {
+    showTransactionsProcessUi(signedTxns.length)
+  }
+
+  try {
+    for (let i = 0; i < signedTxns.length; i++) {
+      const signedTransaction = signedTxns[i]
+      await sendSignedTransaction({
+        connection,
+        signedTransaction,
+        block,
+        transactionInstructionIdx: i,
+        showUiComponent,
+      })
+    }
+
+    if (showUiComponent) {
+      closeTransactionProcessUi()
+    }
+  } catch (e) {
+    if (showUiComponent) {
+      if (showUiComponent) {
+        showTransactionError(
+          async () => alert('Retry not supported.'),
+          e.error ? e.error : `${e}`,
+          e.txid
+        )
+      }
+    }
+    throw e
+  }
+}
+
 export const transactionInstructionsToTypedInstructionsSets = (
   instructionsSet: TransactionInstruction[],
   type: SequenceType

@@ -69,10 +69,10 @@ const Bastion = ({
     },
   ]
   const schema = yup.object().shape({
-    governedAccount: yup
-      .object()
-      .nullable()
-      .required('Governed account is required'),
+    // governedAccount: yup
+    //   .object()
+    //   .nullable()
+    //   .required('Governed account is required'),
   })
 
   const onRequestApproved = async (
@@ -103,11 +103,10 @@ const Bastion = ({
 
   async function getInstruction(): Promise<UiInstruction> {
     const isValid = await validateInstruction()
-    if (!isValid || !form.transactionsWithSession || !form.governedAccount) {
-      console.log('empty')
+    if (!isValid || !form.transactionsWithSession || !form.nativeTreasury) {
       return {
         isValid: false,
-        governance: form.governedAccount?.governance,
+        governance: form.nativeTreasury?.governance,
       }
     }
 
@@ -119,7 +118,7 @@ const Bastion = ({
 
     return {
       isValid: true,
-      governance: form.governedAccount.governance,
+      governance: form.nativeTreasury.governance,
       serializedTransactions,
     }
   }
@@ -127,7 +126,7 @@ const Bastion = ({
   useEffect(() => {
     handleSetInstructions(
       {
-        governedAccount: form.governedAccount,
+        governedAccount: form.nativeTreasury?.governance,
         getInstruction,
       },
       index
@@ -137,18 +136,18 @@ const Bastion = ({
   return (
     <WalletConnectProvider onRequestApproved={onRequestApproved}>
       <WalletConnectModal
-        accounts={form.governedAccount ? [form.governedAccount.pubkey] : []}
+        accounts={form.nativeTreasury ? [form.nativeTreasury.pubkey] : []}
       />
 
       <GovernedAccountSelect
-        onChange={(governedAccount: AssetAccount) => {
+        onChange={(nativeTreasury: AssetAccount) => {
           handleSetForm(
             (form): BastionTransactionForm => {
-              return { ...form, governedAccount }
+              return { ...form, nativeTreasury }
             }
           )
         }}
-        value={form.governedAccount}
+        value={form.nativeTreasury}
         error={formErrors['governedAccount']}
         governedAccounts={nativeTreasuries}
         label="Treasury to connect as"

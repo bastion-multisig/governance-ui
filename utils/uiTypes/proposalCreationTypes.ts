@@ -407,7 +407,7 @@ export interface UpdateTokenMetadataForm {
 }
 
 export interface BastionTransactionForm {
-  governedAccount?: AssetAccount
+  nativeTreasury?: AssetAccount
   transactionsWithSession?: {
     requestSession: SessionTypes.Settled
     transactions: Transaction[]

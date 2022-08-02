@@ -15,11 +15,7 @@ import { RpcContext } from '@solana/spl-governance'
 import { withInsertTransaction } from '@solana/spl-governance'
 import { InstructionData } from '@solana/spl-governance'
 import { withSignOffProposal } from '@solana/spl-governance'
-import {
-  sendTransactionsV2,
-  SequenceType,
-  transactionInstructionsToTypedInstructionsSets,
-} from '@utils/sendTransactions'
+import { sendAll } from '@utils/sendTransactions'
 import { UiInstruction } from '@utils/uiTypes/proposalCreationTypes'
 import { VotingClient } from '@utils/uiTypes/VotePlugin'
 import { withAddSignatory } from '@solana/spl-governance'
@@ -180,7 +176,7 @@ export const createProposal = async (
   }
 
   console.log(`Creating proposal using ${insertInstructions.length} chunks`)
-  await sendTransactionsV2({
+  await sendAll({
     wallet,
     connection,
     signersSet: [
@@ -189,13 +185,11 @@ export const createProposal = async (
       ...instructionsData.map((ins) => ins.signers ?? []),
     ],
     showUiComponent: true,
-    TransactionInstructions: [
+    transactionInstructions: [
       prerequisiteInstructions,
       instructions,
       ...insertInstructions.map((ix) => [ix]),
-    ].map((x) =>
-      transactionInstructionsToTypedInstructionsSets(x, SequenceType.Sequential)
-    ),
+    ],
   })
 
   return proposalAddress
