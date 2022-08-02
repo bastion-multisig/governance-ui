@@ -112,6 +112,9 @@ export default function useGovernanceAssets() {
   const governedTokenAccountsWithoutNfts = governedTokenAccounts.filter(
     (x) => x.type !== AccountType.NFT
   )
+  const nativeTreasuries = governedTokenAccounts.filter(
+    (govTokenAcc) => govTokenAcc.type === AccountType.SOL
+  )
   const nftsGovernedTokenAccounts = governedTokenAccounts.filter(
     (govTokenAcc) =>
       govTokenAcc.type === AccountType.NFT ||
@@ -466,5 +469,6 @@ export default function useGovernanceAssets() {
     canUseAuthorityInstruction,
     assetAccounts,
     auxiliaryTokenAccounts,
+    nativeTreasuries,
   }
 }

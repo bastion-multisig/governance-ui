@@ -15,6 +15,7 @@ export async function dryRunInstruction(
   prerequisiteInstructionsToRun?: TransactionInstruction[] | undefined
 ) {
   const transaction = new Transaction({ feePayer: wallet.publicKey })
+
   if (prerequisiteInstructionsToRun) {
     prerequisiteInstructionsToRun.map((x) => transaction.add(x))
   }

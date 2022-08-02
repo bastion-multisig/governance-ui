@@ -59,6 +59,7 @@ export const WalletConnectProvider = ({
   // Step 1 - Initialize wallets and wallet connect client
   useEffect(() => {
     if (!walletConnectClient) {
+      console.log('initing')
       WalletConnectClient.init({
         controller: true,
         projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
@@ -114,8 +115,8 @@ export const WalletConnectProvider = ({
 
         case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
         case SOLANA_SIGNING_METHODS.SOLANA_SIGN_ALL_TRANSACTIONS:
-          if (AUTO_APPROVE && requestSession) {
-            return await approveRequest(requestEvent, requestSession)
+          if (AUTO_APPROVE) {
+            return await approveRequest(requestEvent, requestSession!)
           } else {
             return ModalStore.open('SessionSignSolanaModal', {
               requestEvent,
@@ -172,7 +173,9 @@ export const WalletConnectProvider = ({
         break
       case SOLANA_SIGNING_METHODS.SOLANA_SIGN_ALL_TRANSACTIONS:
         try {
-          const transactions = deserializeAllTransactions(params)
+          const serde = deserializeAllTransactions
+          const transactions = serde(params)
+          console.log('approving all', transactions)
           await onRequestApproved(transactions, requestSession)
           await rejectRequest(requestEvent)
         } catch (err: any) {
@@ -182,7 +185,9 @@ export const WalletConnectProvider = ({
         break
       case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
         try {
-          const transactions = deserialiseTransaction(params)
+          const serde = deserialiseTransaction
+          const transactions = serde(params)
+          console.log('approving', transactions)
           await onRequestApproved([transactions], requestSession)
           await rejectRequest(requestEvent)
         } catch (err: any) {
@@ -215,7 +220,9 @@ export const WalletConnectProvider = ({
    *****************************************************************************/
   useEffect(() => {
     const client = walletConnectClient
+    console.log('Registering')
     if (client) {
+      console.log('Registering2')
       client.on(CLIENT_EVENTS.session.proposal, onSessionProposal)
 
       client.on(CLIENT_EVENTS.session.created, onSessionCreated)
@@ -224,6 +231,7 @@ export const WalletConnectProvider = ({
     }
     return () => {
       if (client) {
+        console.log('Unregistering')
         client.off(CLIENT_EVENTS.session.proposal, onSessionProposal)
 
         client.off(CLIENT_EVENTS.session.created, onSessionCreated)

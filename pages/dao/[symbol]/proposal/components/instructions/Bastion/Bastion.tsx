@@ -1,11 +1,8 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
-import useRealm from '@hooks/useRealm'
-import { PublicKey, Transaction } from '@solana/web3.js'
+import React, { SetStateAction, useContext, useEffect, useState } from 'react'
+import { Transaction } from '@solana/web3.js'
 import useWalletStore from 'stores/useWalletStore'
 import {
   BastionTransactionForm,
-  ComponentInstructionData,
-  Instructions,
   UiInstruction,
 } from '@utils/uiTypes/proposalCreationTypes'
 import { NewProposalContext } from '../../../new'
@@ -15,16 +12,13 @@ import {
   serializeInstructionToBase64,
 } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
-import GovernedAccountSelect from '../../GovernedAccountSelect'
 import { DappData, DappSelect } from './components/DappSelect'
-import { createObligationAccount } from '@tools/sdk/solend/createObligationAccount'
 import { isFormValid } from '@utils/formValidation'
 import * as yup from 'yup'
 import WalletConnectQrReader from 'WalletConnect/components/WalletConnectQrReader'
 import { WalletConnectProvider } from 'WalletConnect/store/WalletConnectContext'
 import { TxInterpreter } from '@bastion-multisig/multisig-tx'
 import WalletConnectModal from 'WalletConnect/components/WalletConnectModal'
-import RequestModalContainer from 'WalletConnect/components/RequestModalContainer'
 import ProjectInfoCard from 'WalletConnect/components/ProjectInfoCard'
 import RequestDataCard from 'WalletConnect/components/RequestDataCard'
 import {
@@ -32,28 +26,27 @@ import {
   serializeAllTransactions,
 } from '@bastion-multisig/solana-wallet'
 import { SessionTypes } from '@walletconnect/types'
+import GovernedAccountSelect from '../../GovernedAccountSelect'
+import { AssetAccount } from '@utils/uiTypes/assets'
 
 const Bastion = ({
   index,
-  governance,
+  governance, // eslint-disable-line
 }: {
   index: number
   governance: ProgramAccount<Governance> | null
 }) => {
   const connection = useWalletStore((s) => s.connection)
-  const wallet = useWalletStore((s) => s.current)
-  const { realmInfo } = useRealm()
-  const { assetAccounts } = useGovernanceAssets()
-  const shouldBeGoverned = index !== 0 && governance
-  const programId: PublicKey | undefined = realmInfo?.programId
+  const { nativeTreasuries } = useGovernanceAssets()
   const [form, setForm] = useState<BastionTransactionForm>({})
   const [formErrors, setFormErrors] = useState({})
-  const { instructionsData, handleSetInstructions } = useContext(
-    NewProposalContext
-  )
-  const handleSetForm = ({ propertyName, value }) => {
+  const { handleSetInstructions } = useContext(NewProposalContext)
+
+  const handleSetForm = (
+    setFormAction: SetStateAction<BastionTransactionForm>
+  ) => {
     setFormErrors({})
-    setForm({ ...form, [propertyName]: value })
+    setForm(setFormAction)
   }
   const [dApp, setdApp] = useState<DappData>()
   const onDappChanged = (value: DappData) => {
@@ -86,23 +79,20 @@ const Bastion = ({
     transactions: Transaction[],
     requestSession: SessionTypes.Settled
   ) => {
-    if (!transactions) {
-      // If a transaction has not been set, apply it to this component
-      handleSetForm({ propertyName: 'transactions', value: transactions })
-      handleSetForm({ propertyName: 'requestSession', value: requestSession })
-    } else {
-      // If a transaction has already been set, insert a new component for it
-      const appendedTransaction: ComponentInstructionData = {
-        governedAccount: form.governedAccount?.governance,
-        getInstruction: undefined, //() => Promise<UiInstruction>
-        type: {
-          id: Instructions.Bastion,
-          name: '',
-          isVisible: true,
-        },
+    handleSetForm(
+      (form): BastionTransactionForm => {
+        return {
+          ...form,
+          transactionsWithSession: [
+            ...(form.transactionsWithSession ?? []),
+            {
+              transactions,
+              requestSession,
+            },
+          ],
+        }
       }
-      handleSetInstructions(appendedTransaction, instructionsData.length)
-    }
+    )
   }
 
   const validateInstruction = async (): Promise<boolean> => {
@@ -113,94 +103,80 @@ const Bastion = ({
 
   async function getInstruction(): Promise<UiInstruction> {
     const isValid = await validateInstruction()
-
-    if (
-      !connection ||
-      !isValid ||
-      !programId ||
-      !form.governedAccount?.governance?.account ||
-      !wallet?.publicKey
-    ) {
+    if (!isValid || !form.transactionsWithSession || !form.governedAccount) {
+      console.log('empty')
       return {
         isValid: false,
         governance: form.governedAccount?.governance,
       }
     }
 
-    const ix = await createObligationAccount({
-      fundingAddress: wallet.publicKey,
-      walletAddress: form.governedAccount.governance.pubkey,
-    })
-
-    const tx = new Transaction().add(ix)
+    const txs = form.transactionsWithSession.flatMap((txs) => txs.transactions)
+    const proposalTxs = await TxInterpreter.proposal(txs)
+    const serializedTransactions = proposalTxs.map((tx) =>
+      tx.map(serializeInstructionToBase64)
+    )
 
     return {
       isValid: true,
       governance: form.governedAccount.governance,
-      serializedTransactions: (await TxInterpreter.proposal([tx])).map((tx) =>
-        tx.map(serializeInstructionToBase64)
-      ),
+      serializedTransactions,
     }
   }
 
   useEffect(() => {
     handleSetInstructions(
       {
-        governedAccount: form.governedAccount?.governance,
+        governedAccount: form.governedAccount,
         getInstruction,
       },
       index
     )
   }, [form])
 
-  const transactionData = useMemo(() => {
-    if (!form.transactions) {
-      return {}
-    } else if (form.transactions.length === 0) {
-      return JSON.stringify(serialiseTransaction(form.transactions[0]))
-    } else {
-      return JSON.stringify(serializeAllTransactions(form.transactions))
-    }
-  }, [form.transactions])
-
   return (
     <WalletConnectProvider onRequestApproved={onRequestApproved}>
       <WalletConnectModal
-        accounts={
-          form.governedAccount ? [form.governedAccount.governance.pubkey] : []
-        }
+        accounts={form.governedAccount ? [form.governedAccount.pubkey] : []}
       />
 
-      {!form.transactions ? (
-        <>
-          <GovernedAccountSelect
-            label="Governance to connect as"
-            governedAccounts={assetAccounts}
-            onChange={(value) => {
-              handleSetForm({ value, propertyName: 'governedAccount' })
-            }}
-            value={form.governedAccount}
-            error={formErrors['governedAccount']}
-            shouldBeGoverned={shouldBeGoverned}
-            governance={governance}
-          />
-          <WalletConnectQrReader />
-          <DappSelect
-            label="Open Bastion dApp"
-            onChange={onDappChanged}
-            dApps={dApps}
-            value={dApp}
-          />
-        </>
-      ) : (
-        <RequestModalContainer title="Sign Message">
-          {form.requestSession && (
-            <ProjectInfoCard metadata={form.requestSession.peer.metadata} />
-          )}
+      <GovernedAccountSelect
+        onChange={(governedAccount: AssetAccount) => {
+          handleSetForm(
+            (form): BastionTransactionForm => {
+              return { ...form, governedAccount }
+            }
+          )
+        }}
+        value={form.governedAccount}
+        error={formErrors['governedAccount']}
+        governedAccounts={nativeTreasuries}
+        label="Treasury to connect as"
+        autoselectFirst={true}
+      />
+      <WalletConnectQrReader />
+      <DappSelect
+        label="Open Bastion dApp"
+        onChange={onDappChanged}
+        dApps={dApps}
+        value={dApp}
+      />
 
-          <RequestDataCard data={transactionData} />
-        </RequestModalContainer>
-      )}
+      {form.transactionsWithSession &&
+        form.transactionsWithSession.map((txs) => {
+          return (
+            <>
+              <ProjectInfoCard metadata={txs.requestSession.peer.metadata} />
+              <RequestDataCard
+                data={
+                  txs.transactions.length === 1
+                    ? (serialiseTransaction(txs.transactions[0]) as any)
+                    : serializeAllTransactions(txs.transactions)
+                }
+              />
+            </>
+          )
+        })}
     </WalletConnectProvider>
   )
 }

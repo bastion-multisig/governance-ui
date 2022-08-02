@@ -408,8 +408,10 @@ export interface UpdateTokenMetadataForm {
 
 export interface BastionTransactionForm {
   governedAccount?: AssetAccount
-  transactions?: Transaction[]
-  requestSession?: SessionTypes.Settled
+  transactionsWithSession?: {
+    requestSession: SessionTypes.Settled
+    transactions: Transaction[]
+  }[]
 }
 
 export enum Instructions {
