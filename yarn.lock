@@ -1490,13 +1490,12 @@
     "@babel/helper-validator-identifier" "^7.16.7"
     to-fast-properties "^2.0.0"
 
-"@bastion-multisig/multisig-tx@^0.3.7":
-  version "0.3.7"
-  resolved "https://registry.yarnpkg.com/@bastion-multisig/multisig-tx/-/multisig-tx-0.3.7.tgz#98edab8e6995d99206ef392fa409005139cd5142"
-  integrity sha512-c8CbeuzWLg8QBwmHIANYS7RMmxzp6m6CA8zRZYtcvVATVvBTKYKB8TquSRaqT+NldVRz6Q0Z0OU7bDHhNgnqgw==
+"@bastion-multisig/multisig-tx@^0.3.8":
+  version "0.3.8"
+  resolved "https://registry.yarnpkg.com/@bastion-multisig/multisig-tx/-/multisig-tx-0.3.8.tgz#f364beb886c5238843bfa3a3afdf764720a0fdfd"
+  integrity sha512-aR1vksFozBGjh52LJU0CBhb8pNvXLP+oWFX7NfOT8341cfZtVOCUkzFAMbyaPpVCVq25Ass1NmvYCjPeW3VEog==
   dependencies:
     "@project-serum/anchor" "^0.24.2"
-    "@solana/spl-governance" "^0.0.34"
     "@solana/spl-token" "^0.2.0"
     node-fetch "2.6.1"
 
