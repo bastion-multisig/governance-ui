@@ -81,7 +81,7 @@ export class AccountMetaDataBrief {
 }
 
 function createGovernanceSchema() {
-  return new Map<Function, any>([
+  return new Map<any, any>([
     // Insert transaction args
     [
       InsertTransactionArgs2,

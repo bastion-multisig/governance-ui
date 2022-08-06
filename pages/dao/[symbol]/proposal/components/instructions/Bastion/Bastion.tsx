@@ -17,7 +17,6 @@ import { isFormValid } from '@utils/formValidation'
 import * as yup from 'yup'
 import WalletConnectQrReader from 'WalletConnect/components/WalletConnectQrReader'
 import { WalletConnectProvider } from 'WalletConnect/store/WalletConnectContext'
-import { TxInterpreter } from '@bastion-multisig/multisig-tx'
 import WalletConnectModal from 'WalletConnect/components/WalletConnectModal'
 import ProjectInfoCard from 'WalletConnect/components/ProjectInfoCard'
 import RequestDataCard from 'WalletConnect/components/RequestDataCard'
@@ -117,9 +116,8 @@ const Bastion = ({
     }
 
     const txs = form.transactionsWithSession.flatMap((txs) => txs.transactions)
-    const proposalTxs = await TxInterpreter.proposal(txs)
-    const serializedTransactions = proposalTxs.map((tx) =>
-      tx.map(serializeInstructionToBase64)
+    const serializedTransactions = txs.map((tx) =>
+      tx.instructions.map(serializeInstructionToBase64)
     )
 
     return {

@@ -7,6 +7,7 @@ import useWalletStore from 'stores/useWalletStore'
 import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import useRealm from './useRealm'
 import useRpcContext from './useRpcContext'
+import { usePartialSigners } from 'WalletConnect/hooks/usePartialSigners'
 
 export default function useCreateProposal() {
   const client = useVotePluginsClientStore(
@@ -15,6 +16,7 @@ export default function useCreateProposal() {
   const { fetchRealmGovernance, refetchProposals } = useWalletStore(
     (s) => s.actions
   )
+  const partialSignerProgram = usePartialSigners()
   const {
     realm,
     ownVoterWeight,
@@ -59,6 +61,9 @@ export default function useCreateProposal() {
     if (!proposalMint) {
       throw new Error('There is no suitable governing token for the proposal')
     }
+    if (!partialSignerProgram) {
+      throw new Error('No partial signer program')
+    }
     const rpcContext = getRpcContext()
     // Fetch governance to get up to date proposalCount
     const selectedGovernance = (await fetchRealmGovernance(
@@ -76,7 +81,8 @@ export default function useCreateProposal() {
       selectedGovernance?.account?.proposalCount,
       instructionsData,
       isDraft,
-      client
+      client,
+      partialSignerProgram
     )
     await refetchProposals()
     return proposalAddress

@@ -22,18 +22,20 @@ export const executeInstructions = async (
   const instructions: TransactionInstruction[] = []
 
   await Promise.all(
-    proposalInstructions.map((instruction) =>
-      // withExecuteTransaction function mutate the given 'instructions' parameter
-      withExecuteTransaction(
-        instructions,
-        programId,
-        programVersion,
-        proposal.account.governance,
-        proposal.pubkey,
-        instruction.pubkey,
-        instruction.account.instructions
+    [...proposalInstructions]
+      .sort((a, b) => a.account.instructionIndex - b.account.instructionIndex)
+      .map((instruction) =>
+        // withExecuteTransaction function mutate the given 'instructions' parameter
+        withExecuteTransaction(
+          instructions,
+          programId,
+          programVersion,
+          proposal.account.governance,
+          proposal.pubkey,
+          instruction.pubkey,
+          instruction.account.instructions
+        )
       )
-    )
   )
 
   if (multiTransactionMode) {

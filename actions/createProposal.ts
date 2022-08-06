@@ -10,6 +10,7 @@ import {
   VoteType,
   withCreateProposal,
   getSignatoryRecordAddress,
+  getNativeTreasuryAddress,
 } from '@solana/spl-governance'
 import { RpcContext } from '@solana/spl-governance'
 import { InstructionData } from '@solana/spl-governance'
@@ -25,6 +26,8 @@ import {
   withInsertInstruction,
   withInsertTransaction2,
 } from 'WalletConnect/actions/withInsertTransaction2'
+import { PartialSigner, TxInterpreter } from '@bastion-multisig/multisig-tx'
+import { Program } from '@project-serum/anchor'
 
 export interface InstructionDataWithHoldUpTime {
   data: InstructionData[] | null
@@ -68,7 +71,8 @@ export const createProposal = async (
   proposalIndex: number,
   instructionsData: InstructionDataWithHoldUpTime[],
   isDraft: boolean,
-  client?: VotingClient
+  client?: VotingClient,
+  partialSignerProgram?: Program<PartialSigner>
 ): Promise<PublicKey> => {
   const instructions: TransactionInstruction[] = []
 
@@ -149,12 +153,37 @@ export const createProposal = async (
     }
   }
 
+  // Handle partial signers when necessary
+  let proposedTransaction: InstructionData[][] = instructionsData
+    .map((tx) => tx.data)
+    .filter((tx) => tx) as InstructionData[][]
+  if (partialSignerProgram) {
+    const proposalInstructions = await TxInterpreter.proposal(
+      partialSignerProgram,
+      await getNativeTreasuryAddress(programId, governance),
+      proposalAddress,
+      instructionsData.map((data) => data.data)
+    )
+
+    // Map back to InstructionData[][] so borsh recognizes the object
+    proposedTransaction = proposalInstructions.map((tx) =>
+      tx.map(
+        (tx) =>
+          new InstructionData({
+            programId: tx.programId,
+            accounts: tx.keys,
+            data: tx.data,
+          })
+      )
+    )
+  }
+
   const insertInstructions: TransactionInstruction[] = []
   // Insert transactions using the loader program
-  for (let index = 0; index < instructionsData.length; index++) {
-    const instruction = instructionsData[index]
-    if (instruction.data) {
-      let space = getProposalTransactionSpace(instruction.data)
+  for (let index = 0; index < proposedTransaction.length; index++) {
+    const instruction = proposedTransaction[index]
+    if (instruction) {
+      const space = getProposalTransactionSpace(instruction)
       await withInsertTransaction2(
         insertInstructions,
         programId,
@@ -165,7 +194,7 @@ export const createProposal = async (
         governanceAuthority,
         index,
         0,
-        instruction.holdUpTime || 0,
+        0,
         // Do not insert transactions yet.
         // Instructions will be pushed individually.
         [],
@@ -173,8 +202,8 @@ export const createProposal = async (
         space
       )
 
-      for (let i = 0; i < instruction.data.length; i++) {
-        const instructionData = instruction.data[i]
+      for (let i = 0; i < instruction.length; i++) {
+        const instructionData = instruction[i]
         const instructionDataBrief = new InstructionDataBrief({
           accounts: instructionData.accounts.map(
             (acc) =>
@@ -183,10 +212,9 @@ export const createProposal = async (
                 isWritable: acc.isWritable,
               })
           ),
-          // Ensure data is a buffer
-          data: Buffer.from(instructionData.data),
+          data: instructionData.data,
         })
-        let instructionKeys = instructionData.accounts.map(
+        const instructionKeys = instructionData.accounts.map(
           (account) => account.pubkey
         )
 
@@ -210,7 +238,7 @@ export const createProposal = async (
 
   if (!isDraft) {
     withSignOffProposal(
-      insertInstructions, // SingOff proposal needs to be executed after inserting instructions hence we add it to insertInstructions
+      insertInstructions, // SignOff proposal needs to be executed after inserting instructions hence we add it to insertInstructions
       programId,
       programVersion,
       realm.pubkey,
@@ -229,7 +257,7 @@ export const createProposal = async (
     signersSet: [
       [...prerequisiteInstructionsSigners],
       [],
-      ...instructionsData.map((ins) => ins.signers ?? []),
+      ...insertInstructions.map((_) => []),
     ],
     showUiComponent: true,
     transactionInstructions: [
