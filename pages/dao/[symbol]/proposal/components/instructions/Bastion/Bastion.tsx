@@ -12,7 +12,7 @@ import {
   serializeInstructionToBase64,
 } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
-import { DappData, DappSelect } from './components/DappSelect'
+import DappSelect from './components/DappSelect'
 import { isFormValid } from '@utils/formValidation'
 import * as yup from 'yup'
 import WalletConnectQrReader from 'WalletConnect/components/WalletConnectQrReader'
@@ -28,6 +28,12 @@ import {
 import { SessionTypes } from '@walletconnect/types'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
 import { AssetAccount } from '@utils/uiTypes/assets'
+
+interface DappData {
+  key: string
+  label: string
+  url: string
+}
 
 const Bastion = ({
   index,

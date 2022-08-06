@@ -629,7 +629,7 @@ export const sendAll = async ({
         feePayer: wallet.publicKey,
         recentBlockhash: block?.blockhash,
       }).add(...ixs)
-      if (signersSet[i].length > 0) {
+      if (signersSet[i] && signersSet[i].length > 0) {
         transaction.partialSign(...signersSet[i])
       }
       return transaction

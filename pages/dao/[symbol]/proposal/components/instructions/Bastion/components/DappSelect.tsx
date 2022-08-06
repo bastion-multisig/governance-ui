@@ -1,6 +1,12 @@
 import Select from '@components/inputs/Select'
 
-export function DappSelect({
+interface DappData {
+  key: string
+  label: string
+  url: string
+}
+
+const DappSelect = ({
   onChange,
   dApps,
   value,
@@ -14,7 +20,7 @@ export function DappSelect({
   error?
   label?
   noMaxWidth?: boolean
-}) {
+}) => {
   function getLabel(dApp: DappData | undefined) {
     if (dApp) {
       return (
@@ -50,8 +56,4 @@ export function DappSelect({
   )
 }
 
-export interface DappData {
-  key: string
-  label: string
-  url: string
-}
+export default DappSelect

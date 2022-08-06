@@ -12,13 +12,19 @@ import {
   getSignatoryRecordAddress,
 } from '@solana/spl-governance'
 import { RpcContext } from '@solana/spl-governance'
-import { withInsertTransaction } from '@solana/spl-governance'
 import { InstructionData } from '@solana/spl-governance'
 import { withSignOffProposal } from '@solana/spl-governance'
 import { sendAll } from '@utils/sendTransactions'
 import { UiInstruction } from '@utils/uiTypes/proposalCreationTypes'
 import { VotingClient } from '@utils/uiTypes/VotePlugin'
 import { withAddSignatory } from '@solana/spl-governance'
+import {
+  AccountMetaDataBrief,
+  getProposalTransactionSpace,
+  InstructionDataBrief,
+  withInsertInstruction,
+  withInsertTransaction2,
+} from 'WalletConnect/actions/withInsertTransaction2'
 
 export interface InstructionDataWithHoldUpTime {
   data: InstructionData[] | null
@@ -131,20 +137,25 @@ export const createProposal = async (
     signatory
   )
 
+  // Gather prerequisite instuctions
+  for (const instruction of instructionsData) {
+    if (instruction.prerequisiteInstructions) {
+      prerequisiteInstructions.push(...instruction.prerequisiteInstructions)
+    }
+    if (instruction.prerequisiteInstructionsSigners) {
+      prerequisiteInstructionsSigners.push(
+        ...instruction.prerequisiteInstructionsSigners
+      )
+    }
+  }
+
   const insertInstructions: TransactionInstruction[] = []
-  for (const [index, instruction] of instructionsData
-    .filter((x) => x.data)
-    .entries()) {
+  // Insert transactions using the loader program
+  for (let index = 0; index < instructionsData.length; index++) {
+    const instruction = instructionsData[index]
     if (instruction.data) {
-      if (instruction.prerequisiteInstructions) {
-        prerequisiteInstructions.push(...instruction.prerequisiteInstructions)
-      }
-      if (instruction.prerequisiteInstructionsSigners) {
-        prerequisiteInstructionsSigners.push(
-          ...instruction.prerequisiteInstructionsSigners
-        )
-      }
-      await withInsertTransaction(
+      let space = getProposalTransactionSpace(instruction.data)
+      await withInsertTransaction2(
         insertInstructions,
         programId,
         programVersion,
@@ -155,9 +166,45 @@ export const createProposal = async (
         index,
         0,
         instruction.holdUpTime || 0,
-        instruction.data,
-        payer
+        // Do not insert transactions yet.
+        // Instructions will be pushed individually.
+        [],
+        payer,
+        space
       )
+
+      for (let i = 0; i < instruction.data.length; i++) {
+        const instructionData = instruction.data[i]
+        const instructionDataBrief = new InstructionDataBrief({
+          accounts: instructionData.accounts.map(
+            (acc) =>
+              new AccountMetaDataBrief({
+                isSigner: acc.isSigner,
+                isWritable: acc.isWritable,
+              })
+          ),
+          // Ensure data is a buffer
+          data: Buffer.from(instructionData.data),
+        })
+        let instructionKeys = instructionData.accounts.map(
+          (account) => account.pubkey
+        )
+
+        await withInsertInstruction(
+          insertInstructions,
+          programId,
+          programVersion,
+          governance,
+          proposalAddress,
+          tokenOwnerRecord.pubkey,
+          governanceAuthority,
+          index,
+          0,
+          instructionData.programId,
+          instructionKeys,
+          instructionDataBrief
+        )
+      }
     }
   }
 
