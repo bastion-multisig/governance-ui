@@ -12,7 +12,7 @@ import {
   serializeInstructionToBase64,
 } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
-import DappSelect from './components/DappSelect'
+import DappSelect from '@components/Bastion/DappSelect'
 import { isFormValid } from '@utils/formValidation'
 import * as yup from 'yup'
 import WalletConnectQrReader from 'WalletConnect/components/WalletConnectQrReader'
