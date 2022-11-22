@@ -15408,10 +15408,10 @@ react-headless-pagination@^0.1.0:
   resolved "https://registry.npmjs.org/react-headless-pagination/-/react-headless-pagination-0.1.0.tgz"
   integrity sha512-B+t+9PafVL4M0SYoVwcPelmWvnGzvTijF1BI0iHcq44vXy1brwFi62d8a8GlipIxvvBIYoghmVqTLiFmlElG1A==
 
-react-hook-form@^7.31.3:
-  version "7.31.3"
-  resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.31.3.tgz#b61bafb9a7435f91695351a7a9f714d8c4df0121"
-  integrity sha512-NVZdCWViIWXXXlQ3jxVQH0NuNfwPf8A/0KvuCxrM9qxtP1qYosfR2ZudarziFrVOC7eTUbWbm1T4OyYCwv9oSQ==
+react-hook-form@^7.39.5:
+  version "7.39.5"
+  resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.39.5.tgz#a4272b60288ef5e1bb42bbb6ba3b36d243ab2879"
+  integrity sha512-OE0HKyz5IPc6svN2wd+e+evidZrw4O4WZWAWYzQVZuHi+hYnHFSLnxOq0ddjbdmaLIsLHut/ab7j72y2QT3+KA==
 
 react-icons@^4.3.1:
   version "4.3.1"
